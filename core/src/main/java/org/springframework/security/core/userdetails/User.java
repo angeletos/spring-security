@@ -26,12 +26,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.Assert;
 
 /**
@@ -156,7 +159,7 @@ public class User implements UserDetails, CredentialsContainer {
 		Assert.notNull(authorities, "Cannot pass a null GrantedAuthority collection");
 		// Ensure array iteration order is predictable (as per
 		// UserDetails.getAuthorities() contract and SEC-717)
-		SortedSet<GrantedAuthority> sortedAuthorities = new TreeSet<GrantedAuthority>(
+		SortedSet<GrantedAuthority> sortedAuthorities = new TreeSet<>(
 				new AuthorityComparator());
 
 		for (GrantedAuthority grantedAuthority : authorities) {
@@ -244,8 +247,28 @@ public class User implements UserDetails, CredentialsContainer {
 		return sb.toString();
 	}
 
+	/**
+	 * Creates a UserBuilder with a specified user name
+	 *
+	 * @param username the username to use
+	 * @return the UserBuilder
+	 */
 	public static UserBuilder withUsername(String username) {
-		return new UserBuilder().username(username);
+		return builder().username(username);
+	}
+
+	/**
+	 * Creates a UserBuilder
+	 *
+	 * @return the UserBuilder
+	 */
+	public static UserBuilder builder() {
+		return new UserBuilder();
+	}
+
+	public static UserBuilder withDefaultPasswordEncoder() {
+		PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+		return builder().passwordEncoder(encoder::encode);
 	}
 
 	public static UserBuilder withUserDetails(UserDetails userDetails) {
@@ -270,6 +293,7 @@ public class User implements UserDetails, CredentialsContainer {
 		private boolean accountLocked;
 		private boolean credentialsExpired;
 		private boolean disabled;
+		private Function<String, String> passwordEncoder = password -> password;
 
 		/**
 		 * Creates a new instance
@@ -284,7 +308,7 @@ public class User implements UserDetails, CredentialsContainer {
 		 * @return the {@link UserBuilder} for method chaining (i.e. to populate
 		 * additional attributes for this user)
 		 */
-		private UserBuilder username(String username) {
+		public UserBuilder username(String username) {
 			Assert.notNull(username, "username cannot be null");
 			this.username = username;
 			return this;
@@ -300,6 +324,20 @@ public class User implements UserDetails, CredentialsContainer {
 		public UserBuilder password(String password) {
 			Assert.notNull(password, "password cannot be null");
 			this.password = password;
+			return this;
+		}
+
+		/**
+		 * Encodes the current password (if non-null) and any future passwords supplied
+		 * to {@link #password(String)}.
+		 *
+		 * @param encoder the encoder to use
+		 * @return the {@link UserBuilder} for method chaining (i.e. to populate
+		 * additional attributes for this user)
+		 */
+		public UserBuilder passwordEncoder(Function<String, String> encoder) {
+			Assert.notNull(encoder, "encoder cannot be null");
+			this.passwordEncoder = encoder;
 			return this;
 		}
 
@@ -329,7 +367,7 @@ public class User implements UserDetails, CredentialsContainer {
 		 * additional attributes for this user)
 		 */
 		public UserBuilder roles(String... roles) {
-			List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>(
+			List<GrantedAuthority> authorities = new ArrayList<>(
 					roles.length);
 			for (String role : roles) {
 				Assert.isTrue(!role.startsWith("ROLE_"), role
@@ -362,7 +400,7 @@ public class User implements UserDetails, CredentialsContainer {
 		 * @see #roles(String...)
 		 */
 		public UserBuilder authorities(Collection<? extends GrantedAuthority> authorities) {
-			this.authorities = new ArrayList<GrantedAuthority>(authorities);
+			this.authorities = new ArrayList<>(authorities);
 			return this;
 		}
 
@@ -428,7 +466,8 @@ public class User implements UserDetails, CredentialsContainer {
 		}
 
 		public UserDetails build() {
-			return new User(username, password, !disabled, !accountExpired,
+			String encodedPassword = this.passwordEncoder.apply(password);
+			return new User(username, encodedPassword, !disabled, !accountExpired,
 					!credentialsExpired, !accountLocked, authorities);
 		}
 	}

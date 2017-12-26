@@ -1,5 +1,5 @@
 = Spring Security Reference
-Ben Alex; Luke Taylor; Rob Winch; Gunnar Hillert
+Ben Alex; Luke Taylor; Rob Winch; Gunnar Hillert; Joe Grandja; Jay Bryant
 :include-dir: _includes
 :security-api-url: http://docs.spring.io/spring-security/site/docs/current/apidocs/
 
@@ -104,7 +104,7 @@ At an authentication level, Spring Security supports a wide range of authenticat
 
 
 
-(* Denotes provided by a third party
+(* Denotes provided by a third party)
 
 Many independent software vendors (ISVs) adopt Spring Security because of this significant choice of flexible authentication models. Doing so allows them to quickly integrate their solutions with whatever their end clients need, without undertaking a lot of engineering or requiring the client to change their environment. If none of the above authentication mechanisms suit your needs, Spring Security is an open platform and it is quite simple to write your own authentication mechanism. Many corporate users of Spring Security need to integrate with "legacy" systems that don't follow any particular security standards, and Spring Security is happy to "play nicely" with such systems.
 
@@ -341,6 +341,31 @@ None of the classes are intended for direct use in an application.
 LDAP authentication and provisioning code. Required if you need to use LDAP authentication or manage LDAP user entries. The top-level package is `org.springframework.security.ldap`.
 
 
+[[spring-security-oauth2-core]]
+===== OAuth 2.0 Core - spring-security-oauth2-core.jar
+`spring-security-oauth2-core.jar` contains core classes and interfaces that provide support for the _OAuth 2.0 Authorization Framework_ and for _OpenID Connect Core 1.0_. It is required by applications that use _OAuth 2.0_ or _OpenID Connect Core 1.0_, such as Client, Resource Server, and Authorization Server. The top-level package is `org.springframework.security.oauth2.core`.
+
+
+[[spring-security-oauth2-client]]
+===== OAuth 2.0 Client - spring-security-oauth2-client.jar
+`spring-security-oauth2-client.jar` is Spring Security's client support for _OAuth 2.0 Authorization Framework_ and _OpenID Connect Core 1.0_. Required by applications leveraging *OAuth 2.0 Login* and/or OAuth Client support. The top-level package is `org.springframework.security.oauth2.client`.
+
+
+[[spring-security-oauth2-jose]]
+===== OAuth 2.0 JOSE - spring-security-oauth2-jose.jar
+`spring-security-oauth2-jose.jar` contains Spring Security's support for the _JOSE_ (Javascript Object Signing and Encryption) framework. The _JOSE_ framework is intended to provide a method to securely transfer claims between parties. It is built from a collection of specifications:
+
+* JSON Web Token (JWT)
+* JSON Web Signature (JWS)
+* JSON Web Encryption (JWE)
+* JSON Web Key (JWK)
+
+It contains the top-level packages:
+
+* `org.springframework.security.oauth2.jwt`
+* `org.springframework.security.oauth2.jose`
+
+
 [[spring-security-acl]]
 ===== ACL - spring-security-acl.jar
 Specialized domain object ACL implementation. Used to apply security to specific domain object instances within your application. The top-level package is `org.springframework.security.acls`.
@@ -378,13 +403,25 @@ This will give you access to the entire project history (including all releases 
 == What's New in Spring Security 5.0
 
 Spring Security 5.0 provides a number of new features as well as support for Spring Framework 5.
-You can find the change log at https://github.com/spring-projects/spring-security/milestone/90?closed=1[5.0.0.M1].
+In total there were 400+ enhancements and bugs resolved.
+You can find the change log at
+https://github.com/spring-projects/spring-security/milestone/90?closed=1[5.0.0.M1]
+https://github.com/spring-projects/spring-security/milestone/97?closed=1[5.0.0.M2]
+https://github.com/spring-projects/spring-security/milestone/100?closed=1[5.0.0.M3]
+https://github.com/spring-projects/spring-security/milestone/101?closed=1[5.0.0.M4]
+https://github.com/spring-projects/spring-security/milestone/102?closed=1[5.0.0.M5]
+https://github.com/spring-projects/spring-security/milestone/103?closed=1[5.0.0.RC1]
+https://github.com/spring-projects/spring-security/milestone/98?closed=1[5.0.0.RELEASE].
 Below are the highlights of this milestone release.
 
 === New Features
 
-* https://github.com/spring-projects/spring-security/issues/3907[#3907] - Support added for OAuth 2.0 Login (start with {gh-samples-url}/boot/oauth2login/README.adoc[Sample README])
-* https://github.com/spring-projects/spring-security/issues/4128[#4128] - Initial Reactive Support (start with {gh-samples-url}/javaconfig/hellowebflux[hellowebflux])
+* <<jc-oauth2login,OAuth 2.0 Login>>
+* Reactive Support
+** <<jc-webflux,@EnableWebFluxSecurity>>
+** <<jc-erms,@EnableReactiveMethodSecurity>>
+** <<test-webflux,WebFlux Testing Support>>
+* Modernized <<core-services-password-encoding,Password Encoding>>
 
 [[samples]]
 == Samples and Guides (Start Here)
@@ -415,6 +452,10 @@ If you are looking to get started with Spring Security, the best place to start 
 | Demonstrates how to create a custom login form.
 | link:../../guides/html5/form-javaconfig.html[Custom Login Form Guide]
 
+| {gh-samples-url}/boot/oauth2login[OAuth 2.0 Login]
+| Demonstrates how to integrate OAuth 2.0 Login with an OAuth 2.0 or OpenID Connect 1.0 Provider.
+| link:{gh-samples-url}/boot/oauth2login/README.adoc[OAuth 2.0 Login Guide]
+
 |===
 
 [[jc]]
@@ -440,12 +481,12 @@ import org.springframework.security.config.annotation.authentication.builders.*;
 import org.springframework.security.config.annotation.web.configuration.*;
 
 @EnableWebSecurity
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig implements WebMvcConfigurer {
 
 	@Bean
 	public UserDetailsService userDetailsService() throws Exception {
 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-		manager.createUser(User.withUsername("user").password("password").roles("USER").build());
+		manager.createUser(User.withDefaultPasswordEncoder().username("user").password("password").roles("USER").build());
 		return manager;
 	}
 }
@@ -763,6 +804,618 @@ a status code 200 will be returned by default.
 - Section <<cas-singlelogout, Single Logout>> (CAS protocol)
 - Documentation for the <<nsa-logout, logout element>> in the Spring Security XML Namespace section
 
+[[jc-webflux]]
+=== WebFlux Security
+
+Spring Security's WebFlux support relies on a `WebFilter` and works the same for Spring WebFlux
+and Spring WebFlux.Fn. You can find a few sample applications that demonstrate the code below:
+
+* Hello WebFlux {gh-samples-url}/javaconfig/hellowebflux[hellowebflux]
+* Hello WebFlux.Fn {gh-samples-url}/javaconfig/hellowebfluxfn[hellowebfluxfn]
+* Hello WebFlux Method {gh-samples-url}/javaconfig/hellowebflux-method[hellowebflux-method]
+
+
+==== Minimal WebFlux Security Configuration
+
+You can find a minimal WebFlux Security configuration below:
+
+[source,java]
+-----
+@EnableWebFluxSecurity
+public class HelloWebfluxSecurityConfig {
+
+	@Bean
+	public MapReactiveUserDetailsService userDetailsRepository() {
+		UserDetails user = User.withDefaultPasswordEncoder()
+			.username("user")
+			.password("user")
+			.roles("USER")
+			.build();
+		return new MapReactiveUserDetailsService(user);
+	}
+}
+-----
+
+This configuration provides form and http basic authentication, sets up authorization to
+require an authenticated user for accessing any page, sets up a default log in page and
+a default log out page, sets up security related HTTP headers, CSRF protection, and more.
+
+==== Explicit WebFlux Security Configuration
+
+You can find an explicit version of the minimal WebFlux Security configuration below:
+
+[source,java]
+-----
+@EnableWebFluxSecurity
+public class HelloWebfluxSecurityConfig {
+
+	@Bean
+	public MapReactiveUserDetailsService userDetailsRepository() {
+		UserDetails user = User.withDefaultPasswordEncoder()
+			.username("user")
+			.password("user")
+			.roles("USER")
+			.build();
+		return new MapReactiveUserDetailsService(user);
+	}
+
+	@Bean
+	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+		http
+			.authorizeExchange()
+				.anyExchange().authenticated()
+				.and()
+			.httpBasic().and()
+			.formLogin();
+		return http.build();
+	}
+}
+-----
+
+This configuration explicitly sets up all the sames things as our minimal configuration.
+From here you can easily make the changes to the defaults.
+
+[[jc-oauth2login]]
+=== OAuth 2.0 Login
+
+The OAuth 2.0 Login feature provides an application with the capability to have users log in to the application
+by using their existing account at an OAuth 2.0 Provider (e.g. GitHub) or OpenID Connect 1.0 Provider (such as Google).
+OAuth 2.0 Login implements the use cases: "Login with Google" or "Login with GitHub".
+
+NOTE: OAuth 2.0 Login is implemented by using the *Authorization Code Grant*, as specified in the https://tools.ietf.org/html/rfc6749#section-4.1[OAuth 2.0 Authorization Framework]
+and http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[OpenID Connect Core 1.0].
+
+[[jc-oauth2login-sample-boot]]
+==== Spring Boot 2.0 Sample
+
+Spring Boot 2.0 brings full auto-configuration capabilities for OAuth 2.0 Login.
+
+This section shows how to configure the {gh-samples-url}/boot/oauth2login[*OAuth 2.0 Login sample*] using _Google_ as the _Authentication Provider_ and covers the following topics:
+
+* <<jc-oauth2login-sample-initial-setup,Initial setup>>
+* <<jc-oauth2login-sample-redirect-uri,Setting the redirect URI>>
+* <<jc-oauth2login-sample-application-config,Configure `application.yml`>>
+* <<jc-oauth2login-sample-boot-application,Boot up the application>>
+
+
+[[jc-oauth2login-sample-initial-setup]]
+===== Initial setup
+
+To use Google's OAuth 2.0 authentication system for login, you must set up a project in the Google API Console to obtain OAuth 2.0 credentials.
+
+NOTE: https://developers.google.com/identity/protocols/OpenIDConnect[Google's OAuth 2.0 implementation] for authentication conforms to the
+ http://openid.net/connect/[OpenID Connect 1.0] specification and is http://openid.net/certification/[OpenID Certified].
+
+Follow the instructions on the https://developers.google.com/identity/protocols/OpenIDConnect[OpenID Connect] page, starting in the section, "Setting up OAuth 2.0".
+
+After completing the "Obtain OAuth 2.0 credentials" instructions, you should have a new OAuth Client with credentials consisting of a Client ID and a Client Secret.
+
+[[jc-oauth2login-sample-redirect-uri]]
+===== Setting the redirect URI
+
+The redirect URI is the path in the application that the end-user's user-agent is redirected back to after they have authenticated with Google
+and have granted access to the OAuth Client _(<<jc-oauth2login-sample-initial-setup,created in the previous step>>)_ on the Consent page.
+
+In the "Set a redirect URI" sub-section, ensure that the *Authorized redirect URIs* field is set to `http://localhost:8080/login/oauth2/code/google`.
+
+TIP: The default redirect URI template is `{baseUrl}/login/oauth2/code/{registrationId}`.
+ The *_registrationId_* is a unique identifier for the <<jc-oauth2login-client-registration,ClientRegistration>>.
+
+[[jc-oauth2login-sample-application-config]]
+===== Configure `application.yml`
+
+Now that you have a new OAuth Client with Google, you need to configure the application to use the OAuth Client for the _authentication flow_. To do so:
+
+. Go to `application.yml` and set the following configuration:
++
+[source,yaml]
+----
+spring:
+  security:
+    oauth2:
+      client:
+        registration:	<1>
+          google:	<2>
+            client-id: google-client-id
+            client-secret: google-client-secret
+----
++
+.OAuth Client properties
+====
+<1> `spring.security.oauth2.client.registration` is the base property prefix for OAuth Client properties.
+<2> Following the base property prefix is the ID for the <<jc-oauth2login-client-registration,ClientRegistration>>, such as google.
+====
+
+. Replace the values in the `client-id` and `client-secret` property with the OAuth 2.0 credentials you created earlier.
+
+
+[[jc-oauth2login-sample-boot-application]]
+===== Boot up the application
+
+Launch the Spring Boot 2.0 sample and go to `http://localhost:8080`.
+You are then redirected to the default _auto-generated_ login page, which displays a link for Google.
+
+Click on the Google link, and you are then redirected to Google for authentication.
+
+After authenticating with your Google account credentials, the next page presented to you is the Consent screen.
+The Consent screen asks you to either allow or deny access to the OAuth Client you created earlier.
+Click *Allow* to authorize the OAuth Client to access your email address and basic profile information.
+
+At this point, the OAuth Client retrieves your email address and basic profile information
+from the http://openid.net/specs/openid-connect-core-1_0.html#UserInfo[UserInfo Endpoint] and establishes an authenticated session.
+
+[[jc-oauth2login-client-registration]]
+==== ClientRegistration
+
+`ClientRegistration` is a representation of a client registered with an OAuth 2.0 or OpenID Connect 1.0 Provider.
+
+A client registration holds information, such as client id, client secret,
+authorization grant type, redirect URI, scope(s), authorization URI, token URI, and other details.
+
+`ClientRegistration` and its properties are defined as follows:
+
+[source,java]
+----
+public final class ClientRegistration {
+	private String registrationId;	<1>
+	private String clientId;	<2>
+	private String clientSecret;	<3>
+	private ClientAuthenticationMethod clientAuthenticationMethod;	<4>
+	private AuthorizationGrantType authorizationGrantType;	<5>
+	private String redirectUriTemplate;	<6>
+	private Set<String> scopes;	<7>
+	private ProviderDetails providerDetails;
+	private String clientName;	<8>
+
+	public class ProviderDetails {
+		private String authorizationUri;	<9>
+		private String tokenUri;	<10>
+		private UserInfoEndpoint userInfoEndpoint;
+		private String jwkSetUri;	<11>
+
+		public class UserInfoEndpoint {
+			private String uri;	<12>
+			private String userNameAttributeName;	<13>
+
+		}
+	}
+}
+----
+<1> `registrationId`: The ID that uniquely identifies the `ClientRegistration`.
+<2> `clientId`: The client identifier.
+<3> `clientSecret`: The client secret.
+<4> `clientAuthenticationMethod`: The method used to authenticate the Client with the Provider. The supported values are *basic* and *post*.
+<5> `authorizationGrantType`: The OAuth 2.0 Authorization Framework defines four https://tools.ietf.org/html/rfc6749#section-1.3[Authorization Grant] types.
+ The supported values are authorization_code and implicit.
+<6> `redirectUriTemplate`: The client's registered redirect URI that the _Authorization Server_ redirects the end-user's user-agent
+ to after the end-user has authenticated and authorized access to the client.
+ The default redirect URI template is `{baseUrl}/login/oauth2/code/{registrationId}`, which supports URI template variables.
+<7> `scopes`: The scope(s) requested by the client during the Authorization Request flow, such as openid, email, or profile.
+<8> `clientName`: A descriptive name used for the client. The name may be used in certain scenarios, such as when displaying the name of the client in the auto-generated login page.
+<9> `authorizationUri`: The Authorization Endpoint URI for the Authorization Server.
+<10> `tokenUri`: The Token Endpoint URI for the Authorization Server.
+<11> `jwkSetUri`: The URI used to retrieve the https://tools.ietf.org/html/rfc7517[JSON Web Key (JWK)] Set from the Authorization Server,
+ which contains the cryptographic key(s) used to verify the https://tools.ietf.org/html/rfc7515[JSON Web Signature (JWS)] of the ID Token and optionally the UserInfo Response.
+<12> `(userInfoEndpoint)uri`: The UserInfo Endpoint URI used to access the claims/attributes of the authenticated end-user.
+<13> `userNameAttributeName`: The name of the attribute returned in the UserInfo Response that references the Name or Identifier of the end-user.
+
+[[jc-oauth2login-boot-property-mappings]]
+==== Spring Boot 2.0 Property Mappings
+
+The following table outlines the mapping of the Spring Boot 2.0 OAuth Client properties to the `ClientRegistration` properties.
+
+|===
+|Spring Boot 2.0 |ClientRegistration
+
+|`spring.security.oauth2.client.registration._[registrationId]_`
+|`registrationId`
+
+|`spring.security.oauth2.client.registration._[registrationId]_.client-id`
+|`clientId`
+
+|`spring.security.oauth2.client.registration._[registrationId]_.client-secret`
+|`clientSecret`
+
+|`spring.security.oauth2.client.registration._[registrationId]_.client-authentication-method`
+|`clientAuthenticationMethod`
+
+|`spring.security.oauth2.client.registration._[registrationId]_.authorization-grant-type`
+|`authorizationGrantType`
+
+|`spring.security.oauth2.client.registration._[registrationId]_.redirect-uri-template`
+|`redirectUriTemplate`
+
+|`spring.security.oauth2.client.registration._[registrationId]_.scope`
+|`scopes`
+
+|`spring.security.oauth2.client.registration._[registrationId]_.client-name`
+|`clientName`
+
+|`spring.security.oauth2.client.provider._[providerId]_.authorization-uri`
+|`providerDetails.authorizationUri`
+
+|`spring.security.oauth2.client.provider._[providerId]_.token-uri`
+|`providerDetails.tokenUri`
+
+|`spring.security.oauth2.client.provider._[providerId]_.jwk-set-uri`
+|`providerDetails.jwkSetUri`
+
+|`spring.security.oauth2.client.provider._[providerId]_.user-info-uri`
+|`providerDetails.userInfoEndpoint.uri`
+
+|`spring.security.oauth2.client.provider._[providerId]_.userNameAttribute`
+|`providerDetails.userInfoEndpoint.userNameAttributeName`
+|===
+
+[[jc-oauth2login-client-registration-repo]]
+==== ClientRegistrationRepository
+
+The `ClientRegistrationRepository` serves as a repository for OAuth 2.0 / OpenID Connect 1.0 `ClientRegistration`(s).
+
+[NOTE]
+Client registration information is ultimately stored and owned by the associated Authorization Server.
+This repository provides the ability to retrieve a sub-set of the primary client registration information,
+which is stored with the Authorization Server.
+
+Spring Boot 2.0 auto-configuration binds each of the properties under `spring.security.oauth2.client.registration._[registrationId]_`
+to an instance of `ClientRegistration` and then composes each of the `ClientRegistration` instance(s) within a `ClientRegistrationRepository`.
+
+[NOTE]
+The default implementation of `ClientRegistrationRepository` is `InMemoryClientRegistrationRepository`.
+
+The auto-configuration also registers the `ClientRegistrationRepository` as a `@Bean` in the `ApplicationContext`
+so that it is available for dependency-injection, if needed by the application.
+
+The following listing shows an example:
+
+[source,java]
+----
+@Controller
+public class MainController {
+
+	@Autowired
+	private ClientRegistrationRepository clientRegistrationRepository;
+
+	@RequestMapping("/")
+	public String index() {
+		ClientRegistration googleRegistration =
+			this.clientRegistrationRepository.findByRegistrationId("google");
+
+		...
+
+		return "index";
+	}
+}
+----
+
+[[jc-oauth2login-common-oauth2-provider]]
+==== CommonOAuth2Provider
+
+`CommonOAuth2Provider` pre-defines a set of default client properties for a number of well known providers: Google, GitHub, Facebook, and Okta.
+
+For example, the `authorization-uri`, `token-uri`, and `user-info-uri` do not change often for a Provider. Therefore, it makes sense to
+provide default values in order to reduce the required configuration.
+
+As demonstrated previously, when we <<jc-oauth2login-sample-application-config,configured a Google client>>, only the `client-id` and `client-secret` properties are required.
+
+The following listing shows an example:
+
+[source,yaml]
+----
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: google-client-id
+            client-secret: google-client-secret
+----
+
+[TIP]
+The auto-defaulting of client properties works seamlessly here because the `registrationId` (`google`) matches the `GOOGLE` `enum` (case-insensitive) in `CommonOAuth2Provider`.
+
+For cases where you may want to specify a different `registrationId`, such as `google-login`,
+you can still leverage auto-defaulting of client properties by configuring the `provider` property.
+
+The following listing shows an example:
+
+[source,yaml]
+----
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google-login:	<1>
+            provider: google	<2>
+            client-id: google-client-id
+            client-secret: google-client-secret
+----
+<1> The `registrationId` is set to `google-login`.
+<2> The `provider` property is set to `google`, which will leverage the auto-defaulting of client properties set in `CommonOAuth2Provider.GOOGLE.getBuilder()`.
+
+[[jc-oauth2login-custom-provider-properties]]
+==== Configuring Custom Provider Properties
+
+There are some OAuth 2.0 Providers that support multi-tenancy, which results in different protocol endpoints for each tenant (or sub-domain).
+
+For example, an OAuth Client registered with Okta is assigned to a specific sub-domain and have their own protocol endpoints.
+
+For these cases, Spring Boot 2.0 provides the following base property for configuring custom provider properties: `spring.security.oauth2.client.provider._[providerId]_`.
+
+The following listing shows an example:
+
+[source,yaml]
+----
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          okta:
+            client-id: okta-client-id
+            client-secret: okta-client-secret
+        provider:
+          okta:	<1>
+            authorization-uri: https://your-subdomain.oktapreview.com/oauth2/v1/authorize
+            token-uri: https://your-subdomain.oktapreview.com/oauth2/v1/token
+            user-info-uri: https://your-subdomain.oktapreview.com/oauth2/v1/userinfo
+            user-name-attribute: sub
+            jwk-set-uri: https://your-subdomain.oktapreview.com/oauth2/v1/keys
+----
+
+<1> The base property (`spring.security.oauth2.client.provider.okta`) allows for custom configuration of protocol endpoint locations.
+
+[[jc-oauth2login-override-boot-autoconfig]]
+==== Overriding Spring Boot 2.0 Auto-configuration
+
+The Spring Boot 2.0 Auto-configuration class for OAuth Client support is `OAuth2ClientAutoConfiguration`.
+
+It performs the following tasks:
+
+* Registers a `ClientRegistrationRepository` `@Bean` composed of `ClientRegistration`(s) from the configured OAuth Client properties.
+* Provides a `WebSecurityConfigurerAdapter` `@Configuration` and enables OAuth 2.0 Login through `httpSecurity.oauth2Login()`.
+
+If you need to override the auto-configuration based on your specific requirements, you may do so in the following ways:
+
+* <<jc-oauth2login-register-clientregistrationrepository-bean,Register a `ClientRegistrationRepository` `@Bean`>>
+* <<jc-oauth2login-provide-websecurityconfigureradapter,Provide a `WebSecurityConfigurerAdapter`>>
+* <<jc-oauth2login-completely-override-autoconfiguration,Completely Override the Auto-configuration>>
+
+
+[[jc-oauth2login-register-clientregistrationrepository-bean]]
+===== Register a `ClientRegistrationRepository` `@Bean`
+
+The following example shows how to register a `ClientRegistrationRepository` `@Bean`:
+
+[source,java]
+----
+@Configuration
+public class OAuth2LoginConfig {
+
+	@Bean
+	public ClientRegistrationRepository clientRegistrationRepository() {
+		return new InMemoryClientRegistrationRepository(this.googleClientRegistration());
+	}
+
+	private ClientRegistration googleClientRegistration() {
+		return ClientRegistration.withRegistrationId("google")
+			.clientId("google-client-id")
+			.clientSecret("google-client-secret")
+			.clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
+			.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+			.redirectUriTemplate("{baseUrl}/login/oauth2/code/{registrationId}")
+			.scope("openid", "profile", "email", "address", "phone")
+			.authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
+			.tokenUri("https://www.googleapis.com/oauth2/v4/token")
+			.userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
+			.userNameAttributeName(IdTokenClaimNames.SUB)
+			.jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
+			.clientName("Google")
+			.build();
+	}
+}
+----
+
+
+[[jc-oauth2login-provide-websecurityconfigureradapter]]
+===== Provide a `WebSecurityConfigurerAdapter`
+
+The following example shows how to provide a `WebSecurityConfigurerAdapter` with `@EnableWebSecurity` and enable OAuth 2.0 login through `httpSecurity.oauth2Login()`:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.authorizeRequests()
+				.anyRequest().authenticated()
+				.and()
+			.oauth2Login();
+	}
+}
+----
+
+
+[[jc-oauth2login-completely-override-autoconfiguration]]
+===== Completely Override the Auto-configuration
+
+The following example shows how to completely override the auto-configuration by both registering a `ClientRegistrationRepository` `@Bean` and providing a `WebSecurityConfigurerAdapter`, both of which were described in the two preceding sections.
+
+[source,java]
+----
+@Configuration
+public class OAuth2LoginConfig {
+
+	@EnableWebSecurity
+	public static class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			http
+				.authorizeRequests()
+					.anyRequest().authenticated()
+					.and()
+				.oauth2Login();
+		}
+	}
+
+	@Bean
+	public ClientRegistrationRepository clientRegistrationRepository() {
+		return new InMemoryClientRegistrationRepository(this.googleClientRegistration());
+	}
+
+	private ClientRegistration googleClientRegistration() {
+		return ClientRegistration.withRegistrationId("google")
+			.clientId("google-client-id")
+			.clientSecret("google-client-secret")
+			.clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
+			.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+			.redirectUriTemplate("{baseUrl}/login/oauth2/code/{registrationId}")
+			.scope("openid", "profile", "email", "address", "phone")
+			.authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
+			.tokenUri("https://www.googleapis.com/oauth2/v4/token")
+			.userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
+			.userNameAttributeName(IdTokenClaimNames.SUB)
+			.jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
+			.clientName("Google")
+			.build();
+	}
+}
+----
+
+[[jc-oauth2login-javaconfig-wo-boot]]
+==== Java Configuration without Spring Boot 2.0
+
+If you are not able to use Spring Boot 2.0 and would like to configure one of the pre-defined providers in `CommonOAuth2Provider`
+(for example, Google), apply the following configuration:
+
+[source,java]
+----
+@Configuration
+public class OAuth2LoginConfig {
+
+	@EnableWebSecurity
+	public static class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			http
+				.authorizeRequests()
+					.anyRequest().authenticated()
+					.and()
+				.oauth2Login();
+		}
+	}
+
+	@Bean
+	public ClientRegistrationRepository clientRegistrationRepository() {
+		return new InMemoryClientRegistrationRepository(this.googleClientRegistration());
+	}
+
+	@Bean
+	public OAuth2AuthorizedClientService authorizedClientService() {
+		return new InMemoryOAuth2AuthorizedClientService(this.clientRegistrationRepository());
+	}
+
+	private ClientRegistration googleClientRegistration() {
+		return CommonOAuth2Provider.GOOGLE.getBuilder("google")
+			.clientId("google-client-id")
+			.clientSecret("google-client-secret")
+			.build();
+	}
+}
+----
+
+[[jc-oauth2login-authorized-client]]
+==== OAuth2AuthorizedClient / OAuth2AuthorizedClientService
+
+`OAuth2AuthorizedClient` is a representation of an Authorized Client.
+A client is considered to be authorized when the end-user (Resource Owner) has granted authorization to the client to access its protected resources.
+
+`OAuth2AuthorizedClient` serves the purpose of associating an `OAuth2AccessToken` to a `ClientRegistration` (client) and resource owner,
+who is the `Principal` end-user that granted the authorization.
+
+The primary role of the `OAuth2AuthorizedClientService` is to manage `OAuth2AuthorizedClient` instances.
+From a developer perspective, it provides the capability to lookup an `OAuth2AccessToken` associated with a client
+so that it may be used to initiate a request to a resource server.
+
+[NOTE]
+Spring Boot 2.0 Auto-configuration registers an `OAuth2AuthorizedClientService` `@Bean` in the `ApplicationContext`.
+
+The developer may also register an `OAuth2AuthorizedClientService` `@Bean` in the `ApplicationContext` (overriding Spring Boot 2.0 Auto-configuration)
+in order to have the ability to lookup an `OAuth2AccessToken` associated with a specific `ClientRegistration` (client).
+
+The following listing shows an example:
+
+[source,java]
+----
+@Controller
+public class MainController {
+
+	@Autowired
+	private OAuth2AuthorizedClientService authorizedClientService;
+
+	@RequestMapping("/userinfo")
+	public String userinfo(OAuth2AuthenticationToken authentication) {
+		// authentication.getAuthorizedClientRegistrationId() returns the
+		// registrationId of the Client that was authorized during the Login flow
+		OAuth2AuthorizedClient authorizedClient =
+			this.authorizedClientService.loadAuthorizedClient(
+				authentication.getAuthorizedClientRegistrationId(),
+				authentication.getName());
+
+		OAuth2AccessToken accessToken = authorizedClient.getAccessToken();
+
+		...
+
+		return "userinfo";
+	}
+}
+----
+
+
+[[jc-oauth2login-resources]]
+==== Additional Resources
+
+The following additional resources describe advanced configuration options:
+
+* <<oauth2login-advanced-login-page, OAuth 2.0 Login Page>>
+* Authorization Endpoint:
+** <<oauth2login-advanced-authorization-request-repository, AuthorizationRequestRepository>>
+* <<oauth2login-advanced-redirection-endpoint, Redirection Endpoint>>
+* Token Endpoint:
+** <<oauth2login-advanced-token-client, OAuth2AccessTokenResponseClient>>
+* UserInfo Endpoint:
+** <<oauth2login-advanced-map-authorities, Mapping User Authorities>>
+** <<oauth2login-advanced-custom-user, Configuring a Custom OAuth2User>>
+** <<oauth2login-advanced-oauth2-user-service, OAuth 2.0 UserService>>
+** <<oauth2login-advanced-oidc-user-service, OpenID Connect 1.0 UserService>>
+
 [[jc-authentication]]
 === Authentication
 
@@ -777,9 +1430,11 @@ We have already seen an example of configuring in-memory authentication for a si
 ----
 @Bean
 public UserDetailsService userDetailsService() throws Exception {
+	// ensure the passwords are encoded properly
+	UserBuilder users = User.withDefaultPasswordEncoder();
 	InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-	manager.createUser(User.withUsername("user").password("password").roles("USER").build());
-	manager.createUser(User.withUsername("admin").password("password").roles("USER","ADMIN").build());
+	manager.createUser(users.username("user").password("password").roles("USER").build());
+	manager.createUser(users.username("admin").password("password").roles("USER","ADMIN").build());
 	return manager;
 }
 ----
@@ -796,12 +1451,14 @@ private DataSource dataSource;
 
 @Autowired
 public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+	// ensure the passwords are encoded properly
+	UserBuilder users = User.withDefaultPasswordEncoder();
 	auth
 		.jdbcAuthentication()
 			.dataSource(dataSource)
 			.withDefaultSchema()
-			.withUser("user").password("password").roles("USER").and()
-			.withUser("admin").password("password").roles("USER", "ADMIN");
+			.withUser(users.username("user").password("password").roles("USER"))
+			.withUser(users.username("admin").password("password").roles("USER","ADMIN"));
 }
 ----
 
@@ -914,8 +1571,6 @@ public BCryptPasswordEncoder passwordEncoder() {
 }
 ----
 
-==== LDAP Authentication
-
 === Multiple HttpSecurity
 
 We can configure multiple HttpSecurity instances just as we can have multiple `<http>` blocks. The key is to extend the `WebSecurityConfigurationAdapter` multiple times. For example, the following is an example of having a different configuration for URL's that start with `/api/`.
@@ -924,11 +1579,13 @@ We can configure multiple HttpSecurity instances just as we can have multiple `<
 ----
 @EnableWebSecurity
 public class MultiHttpSecurityConfig {
-	@Bean
+	@Bean                                                             <1>
 	public UserDetailsService userDetailsService() throws Exception {
+		// ensure the passwords are encoded properly
+		UserBuilder users = User.withDefaultPasswordEncoder();
 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-		manager.createUser(User.withUsername("user").password("password").roles("USER").build());
-		manager.createUser(User.withUsername("admin").password("password").roles("USER","ADMIN").build());
+		manager.createUser(users.username("user").password("password").roles("USER").build());
+		manager.createUser(users.username("admin").password("password").roles("USER","ADMIN").build());
 		return manager;
 	}
 
@@ -1055,6 +1712,104 @@ public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
 
 For additional information about methods that can be overridden, refer to the `GlobalMethodSecurityConfiguration` Javadoc.
 
+[[jc-erms]]
+==== EnableReactiveMethodSecurity
+
+Spring Security supports method security using https://projectreactor.io/docs/core/release/reference/#context[Reactor's Context] which is setup using `ReactiveSecurityContextHolder`.
+For example, this demonstrates how to retrieve the currently logged in user's message.
+
+[source,java]
+----
+Authentication authentication = new TestingAuthenticationToken("user", "password", "ROLE_USER");
+
+Mono<String> messageByUsername = ReactiveSecurityContextHolder.getContext()
+	.map(SecurityContext::getAuthentication)
+	.map(Authentication::getName)
+	.flatMap(this::findMessageByUsername)
+	// In a WebFlux application the `subscriberContext` is automatically setup using `ReactorContextWebFilter`
+	.subscriberContext(ReactiveSecurityContextHolder.withAuthentication(authentication));
+
+StepVerifier.create(messageByUsername)
+	.expectNext("Hi user")
+	.verifyComplete();
+----
+
+with `this::findMessageByUsername` defined as:
+
+[source,java]
+----
+Mono<String> findMessageByUsername(String username) {
+	return Mono.just("Hi " + username);
+}
+----
+
+Below is a minimal method security configuration when using method security in reactive applications.
+
+[source,java]
+----
+@EnableReactiveMethodSecurity
+public class SecurityConfig {
+	@Bean
+	public MapReactiveUserDetailsService userDetailsRepository() {
+		User.UserBuilder userBuilder = User.withDefaultPasswordEncoder();
+		UserDetails rob = userBuilder.username("rob").password("rob").roles("USER").build();
+		UserDetails admin = userBuilder.username("admin").password("admin").roles("USER","ADMIN").build();
+		return new MapReactiveUserDetailsService(rob, admin);
+	}
+}
+----
+
+Consider the following class:
+
+[source,java]
+----
+@Component
+public class HelloWorldMessageService {
+	@PreAuthorize("hasRole('ADMIN')")
+	public Mono<String> findMessage() {
+		return Mono.just("Hello World!");
+	}
+}
+----
+
+Combined with our configuration above, `@PreAuthorize("hasRole('ADMIN')")` will ensure that `findByMessage` is only invoked by a user with the role `ADMIN`.
+It is important to note that any of the expressions in standard method security work for `@EnableReactiveMethodSecurity`.
+However, at this time we only support return type of `Boolean` or `boolean` of the expression.
+This means that the expression must not block.
+
+When integrating with <<jc-webflux>>, the Reactor Context is automatically established by Spring Security according to the authenticated user.
+
+[source,java]
+----
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
+public class SecurityConfig {
+
+	@Bean
+	SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http) throws Exception {
+		return http
+			// Demonstrate that method security works
+			// Best practice to use both for defense in depth
+			.authorizeExchange()
+				.anyExchange().permitAll()
+				.and()
+			.httpBasic().and()
+			.build();
+	}
+
+	@Bean
+	MapReactiveUserDetailsService userDetailsRepository() {
+		User.UserBuilder userBuilder = User.withDefaultPasswordEncoder();
+		UserDetails rob = userBuilder.username("rob").password("rob").roles("USER").build();
+		UserDetails admin = userBuilder.username("admin").password("admin").roles("USER","ADMIN").build();
+		return new MapReactiveUserDetailsService(rob, admin);
+	}
+}
+
+----
+
+You can find a complete sample in {gh-samples-url}/javaconfig/hellowebflux-method[hellowebflux-method]
+
 === Post Processing Configured Objects
 
 Spring Security's Java Configuration does not expose every property of every object that it configures. This simplifies the configuration for a majority of users. Afterall, if every property was exposed, users could use standard bean configuration.
@@ -1086,7 +1841,7 @@ For example, you might have something that looks like this:
 
 [source,java]
 ----
-public class MyCustomDsl extends AbstractHttpConfigurer<CorsConfigurerMyCustomDsl, HttpSecurity> {
+public class MyCustomDsl extends AbstractHttpConfigurer<MyCustomDsl, HttpSecurity> {
 	private boolean flag;
 
 	@Override
@@ -1300,12 +2055,38 @@ To add some users, you can define a set of test data directly in the namespace:
 <authentication-manager>
 <authentication-provider>
 	<user-service>
-	<user name="jimi" password="jimispassword" authorities="ROLE_USER, ROLE_ADMIN" />
-	<user name="bob" password="bobspassword" authorities="ROLE_USER" />
+	<!-- Password is prefixed with {noop} to indicate to DelegatingPasswordEncoder that
+	NoOpPasswordEncoder should be used. This is not safe for production, but makes reading
+	in samples easier. Normally passwords should be hashed using BCrypt -->
+	<user name="jimi" password="{noop}jimispassword" authorities="ROLE_USER, ROLE_ADMIN" />
+	<user name="bob" password="{noop}bobspassword" authorities="ROLE_USER" />
 	</user-service>
 </authentication-provider>
 </authentication-manager>
 ----
+
+This is an example of a secure way of storing the same passwords. The password is prefixed
+with `{bcrypt}` to instruct `DelegatingPasswordEncoder`, which supports any configured
+`PasswordEncoder` for matching, that the passwords are hashed using
+BCrypt:
+
+[source,xml]
+----
+<authentication-manager>
+<authentication-provider>
+	<user-service>
+	<user name="jimi" password="{bcrypt}$2a$10$ddEWZUl8aU0GdZPPpy7wbu82dvEw/pBpbRvDQRqA41y6mK1CoH00m"
+			authorities="ROLE_USER, ROLE_ADMIN" />
+	<user name="bob" password="{bcrypt}$2a$10$/elFpMBnAYYig6KRR5bvOOYeZr1ie1hSogJryg9qDlhza4oCw1Qka"
+			authorities="ROLE_USER" />
+	<user name="jimi" password="{noop}jimispassword" authorities="ROLE_USER, ROLE_ADMIN" />
+	<user name="bob" password="{noop}bobspassword" authorities="ROLE_USER" />
+	</user-service>
+</authentication-provider>
+</authentication-manager>
+----
+
+
 
 [subs="quotes"]
 ****
@@ -1450,9 +2231,9 @@ Passwords should always be encoded using a secure hashing algorithm designed for
 <authentication-provider>
 	<password-encoder ref="bcryptEncoder"/>
 	<user-service>
-	<user name="jimi" password="d7e6351eaa13189a5a3641bab846c8e8c69ba39f"
+	<user name="jimi" password="$2a$10$ddEWZUl8aU0GdZPPpy7wbu82dvEw/pBpbRvDQRqA41y6mK1CoH00m"
 			authorities="ROLE_USER, ROLE_ADMIN" />
-	<user name="bob" password="4e7421b1b8765d8f9406d87e7cc6aa784c4ab97f"
+	<user name="bob" password="$2a$10$/elFpMBnAYYig6KRR5bvOOYeZr1ie1hSogJryg9qDlhza4oCw1Qka"
 			authorities="ROLE_USER" />
 	</user-service>
 </authentication-provider>
@@ -2443,10 +3224,14 @@ Is easy to use create a custom `UserDetailsService` implementation that extracts
 [source,xml]
 ----
 <user-service id="userDetailsService">
-<user name="jimi" password="jimispassword" authorities="ROLE_USER, ROLE_ADMIN" />
-<user name="bob" password="bobspassword" authorities="ROLE_USER" />
+<!-- Password is prefixed with {noop} to indicate to DelegatingPasswordEncoder that
+NoOpPasswordEncoder should be used. This is not safe for production, but makes reading
+in samples easier. Normally passwords should be hashed using BCrypt -->
+<user name="jimi" password="{noop}jimispassword" authorities="ROLE_USER, ROLE_ADMIN" />
+<user name="bob" password="{noop}bobspassword" authorities="ROLE_USER" />
 </user-service>
 ----
+
 
 This also supports the use of an external properties file:
 
@@ -2494,38 +3279,7 @@ You can use different relational database management systems by modifying the `D
 ===== Authority Groups
 By default, `JdbcDaoImpl` loads the authorities for a single user with the assumption that the authorities are mapped directly to users (see the <<appendix-schema,database schema appendix>>). An alternative approach is to partition the authorities into groups and assign groups to the user. Some people prefer this approach as a means of administering user rights. See the `JdbcDaoImpl` Javadoc for more information on how to enable the use of group authorities. The group schema is also included in the appendix.
 
-
-[[core-services-password-encoding]]
-=== Password Encoding
-Spring Security's `PasswordEncoder` interface is used to support the use of passwords which are encoded in some way in persistent storage. You should never store passwords in plain text. Always use a one-way password hashing algorithm such as bcrypt which uses a built-in salt value which is different for each stored password. Do not use a plain hash function such as MD5 or SHA, or even a salted version. Bcrypt is deliberately designed to be slow and to hinder offline password cracking, whereas standard hash algorithms are fast and can easily be used to test thousands of passwords in parallel on custom hardware. You might think this doesn't apply to you since your password database is secure and offline attacks aren't a risk. If so, do some research and read up on all the high-profile sites which have been compromised in this way and have been pilloried for storing their passwords insecurely. It's best to be on the safe side. Using `org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"` is a good choice for security. There are also compatible implementations in other common programming languages so it a good choice for interoperability too.
-
-If you are using a legacy system which already has hashed passwords, then you will need to use an encoder which matches your current algorithm, at least until you can migrate your users to a more secure scheme (usually this will involve asking the user to set a new password, since hashes are irreversible). Spring Security has a package containing legacy password encoding implementation, namely, `org.springframework.security.authentication.encoding`. The `DaoAuthenticationProvider` can be injected with either the new or legacy `PasswordEncoder` types.
-
-
-==== What is a hash?
-Password hashing is not unique to Spring Security but is a common source of confusion for users who are not familiar with the concept. A hash (or digest) algorithm is a one-way function which produces a piece of fixed-length output data (the hash) from some input data, such as a password. As an example, the MD5 hash of the string "password" (in hexadecimal) is
-
-[source,txt]
-----
-5f4dcc3b5aa765d61d8327deb882cf99
-----
-
-A hash is "one-way" in the sense that it is very difficult (effectively impossible) to obtain the original input given the hash value, or indeed any possible input which would produce that hash value. This property makes hash values very useful for authentication purposes. They can be stored in your user database as an alternative to plaintext passwords and even if the values are compromised they do not immediately reveal a password which can be used to login. Note that this also means you have no way of recovering the password once it is encoded.
-
-==== Adding Salt to a Hash
-One potential problem with the use of password hashes that it is relatively easy to get round the one-way property of the hash if a common word is used for the input. People tend to choose similar passwords and huge dictionaries of these from previously hacked sites are available online. For example, if you search for the hash value `5f4dcc3b5aa765d61d8327deb882cf99` using google, you will quickly find the original word "password". In a similar way, an attacker can build a dictionary of hashes from a standard word list and use this to lookup the original password. One way to help prevent this is to have a suitably strong password policy to try to prevent common words from being used. Another is to use a "salt" when calculating the hashes. This is an additional string of known data for each user which is combined with the password before calculating the hash. Ideally the data should be as random as possible, but in practice any salt value is usually preferable to none. Using a salt means that an attacker has to build a separate dictionary of hashes for each salt value, making the attack more complicated (but not impossible).
-
-Bcrypt automatically generates a random salt value for each password when it is encoded, and stores it in the bcrypt string in a standard format.
-
-[NOTE]
-====
-The legacy approach to handling salt was to inject a `SaltSource` into the `DaoAuthenticationProvider`, which would obtain a salt value for a particular user and pass it to the `PasswordEncoder`. Using bcrypt means you don't have worry about the details of salt handling (such as where the value is stored), as it is all done internally. So we'd strongly recommend you use bcrypt unless you already have a system in place which stores the salt separately.
-====
-
-====  Hashing and Authentication
-When an authentication provider (such as Spring Security's `DaoAuthenticationProvider`) needs to check the password in a submitted authentication request against the known value for a user, and the stored password is encoded in some way, then the submitted value must be encoded using exactly the same algorithm. It's up to you to check that these are compatible as Spring Security has no control over the persistent values. If you add password hashing to your authentication configuration in Spring Security, and your database contains plaintext passwords, then there is no way authentication can succeed. Even if you are aware that your database is using MD5 to encode the passwords, for example, and your application is configured to use Spring Security's `Md5PasswordEncoder`, there are still things that can go wrong. The database may have the passwords encoded in Base 64, for example while the encoder is using hexadecimal strings (the default). Alternatively your database may be using upper-case while the output from the encoder is lower-case. Make sure you write a test to check the output from your configured password encoder with a known password and salt combination and check that it matches the database value before going further and attempting to authenticate through your application. Using a standard like bcrypt will avoid these issues.
-
-If you want to generate encoded passwords directly in Java for storage in your user database, then you can use the `encode` method on the `PasswordEncoder`.
+include::{include-dir}/password-encoder.adoc[leveloffset=+2]
 
 include::{include-dir}/jackson.adoc[]
 
@@ -3363,14 +4117,13 @@ CSRF protection is enabled by default with Java Configuration. If you would like
 public class WebSecurityConfig extends
 WebSecurityConfigurerAdapter {
 
-@Override
-protected void configure(HttpSecurity http) throws Exception {
-	http
-	.csrf().disable();
-}
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.csrf().disable();
+	}
 }
 ----
-
 
 [[csrf-include-csrf-token]]
 ==== Include the CSRF Token
@@ -3898,7 +4651,7 @@ When using Spring Web MVC, this is typically done within your configuration. For
 [source,java]
 ----
 @EnableWebMvc
-public class WebMvcConfiguration extends WebMvcConfigurerAdapter {
+public class WebMvcConfiguration implements WebMvcConfigurer {
 
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -4599,7 +5352,7 @@ To use concurrent session support, you'll need to add the following to `web.xml`
 
 
 
-In addition, you will need to add the `ConcurrentSessionFilter` to your `FilterChainProxy`. The `ConcurrentSessionFilter` requires two properties, `sessionRegistry`, which generally points to an instance of `SessionRegistryImpl`, and `expiredUrl`, which points to the page to display when a session has expired. A configuration using the namespace to create the `FilterChainProxy` and other default beans might look like this:
+In addition, you will need to add the `ConcurrentSessionFilter` to your `FilterChainProxy`. The `ConcurrentSessionFilter` requires two constructor arguments, `sessionRegistry`, which generally points to an instance of `SessionRegistryImpl`, and `sessionInformationExpiredStrategy`, which defines the strategy to apply when a session has expired. A configuration using the namespace to create the `FilterChainProxy` and other default beans might look like this:
 
 [source,xml]
 ----
@@ -4611,10 +5364,15 @@ In addition, you will need to add the `ConcurrentSessionFilter` to your `FilterC
 <session-management session-authentication-strategy-ref="sas"/>
 </http>
 
+<beans:bean id="redirectSessionInformationExpiredStrategy"
+class="org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy">
+<beans:constructor-arg name="invalidSessionUrl" value="/session-expired.htm" />
+</beans:bean>
+
 <beans:bean id="concurrencyFilter"
 class="org.springframework.security.web.session.ConcurrentSessionFilter">
-<beans:property name="sessionRegistry" ref="sessionRegistry" />
-<beans:property name="expiredUrl" value="/session-expired.htm" />
+<beans:constructor-arg name="sessionRegistry" ref="sessionRegistry" />
+<beans:constructor-arg name="sessionInformationExpiredStrategy" ref="redirectSessionInformationExpiredStrategy" />
 </beans:bean>
 
 <beans:bean id="myAuthFilter" class=
@@ -5496,16 +6254,16 @@ There is an additional stage where the roles (or attributes) are mapped to Sprin
 
 
 ==== PreAuthenticatedAuthenticationProvider
-The pre-authenticated provider has little more to do than load the `UserDetails` object for the user. It does this by delegating to a `AuthenticationUserDetailsService`. The latter is similar to the standard `UserDetailsService` but takes an `Authentication` object rather than just user name:
+The pre-authenticated provider has little more to do than load the `UserDetails` object for the user. It does this by delegating to an `AuthenticationUserDetailsService`. The latter is similar to the standard `UserDetailsService` but takes an `Authentication` object rather than just user name:
 
 [source,java]
 ----
 public interface AuthenticationUserDetailsService {
-UserDetails loadUserDetails(Authentication token) throws UsernameNotFoundException;
+	UserDetails loadUserDetails(Authentication token) throws UsernameNotFoundException;
 }
 ----
 
-This interface may have also other uses but with pre-authentication it allows access to the authorities which were packaged in the `Authentication` object, as we saw in the previous section. the `PreAuthenticatedGrantedAuthoritiesUserDetailsService` class does this. Alternatively, it may delegate to a standard `UserDetailsService` via the `UserDetailsByNameServiceWrapper` implementation.
+This interface may have also other uses but with pre-authentication it allows access to the authorities which were packaged in the `Authentication` object, as we saw in the previous section. The `PreAuthenticatedGrantedAuthoritiesUserDetailsService` class does this. Alternatively, it may delegate to a standard `UserDetailsService` via the `UserDetailsByNameServiceWrapper` implementation.
 
 ==== Http403ForbiddenEntryPoint
 The `AuthenticationEntryPoint` was discussed in the <<tech-intro-auth-entry-point,technical overview>> chapter. Normally it is responsible for kick-starting the authentication process for an unauthenticated user (when they try to access a protected resource), but in the pre-authenticated case this doesn't apply. You would only configure the `ExceptionTranslationFilter` with an instance of this class if you aren't using pre-authentication in combination with other authentication mechanisms. It will be called if the user is rejected by the `AbstractPreAuthenticatedProcessingFilter` resulting in a null authentication. It always returns a `403`-forbidden response code if called.
@@ -5800,6 +6558,522 @@ By default, the user authorities are obtained from the `memberOf` attribute valu
 ===== Active Directory Error Codes
 By default, a failed result will cause a standard Spring Security `BadCredentialsException`. If you set the property `convertSubErrorCodesToExceptions` to `true`, the exception messages will be parsed to attempt to extract the Active Directory-specific error code and raise a more specific exception. Check the class Javadoc for more information.
 
+[[oauth2login-advanced]]
+== OAuth 2.0 Login -- Advanced Configuration
+
+`HttpSecurity.oauth2Login()` provides a number of configuration options for customizing OAuth 2.0 Login.
+The main configuration options are grouped into their protocol endpoint counterparts.
+
+For example, `oauth2Login().authorizationEndpoint()` allows configuring the _Authorization Endpoint_,
+whereas `oauth2Login().tokenEndpoint()` allows configuring the _Token Endpoint_.
+
+The following code shows an example:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.authorizationEndpoint()
+					...
+				.redirectionEndpoint()
+					...
+				.tokenEndpoint()
+					...
+				.userInfoEndpoint()
+					...
+	}
+}
+----
+
+The main goal of the `oauth2Login()` DSL was to closely align with the naming, as defined in the specifications.
+
+The OAuth 2.0 Authorization Framework defines the https://tools.ietf.org/html/rfc6749#section-3[Protocol Endpoints] as follows:
+
+The authorization process utilizes two authorization server endpoints (HTTP resources):
+
+* Authorization Endpoint: Used by the client to obtain authorization from the resource owner via user-agent redirection.
+* Token Endpoint: Used by the client to exchange an authorization grant for an access token, typically with client authentication.
+
+As well as one client endpoint:
+
+* Redirection Endpoint: Used by the authorization server to return responses
+containing authorization credentials to the client via the resource owner user-agent.
+
+The OpenID Connect Core 1.0 specification defines the http://openid.net/specs/openid-connect-core-1_0.html#UserInfo[UserInfo Endpoint] as follows:
+
+The UserInfo Endpoint is an OAuth 2.0 Protected Resource that returns claims about the authenticated end-user.
+To obtain the requested claims about the end-user, the client makes a request to the UserInfo Endpoint
+by using an access token obtained through OpenID Connect Authentication.
+These claims are normally represented by a JSON object that contains a collection of name-value pairs for the claims.
+
+The following code shows the complete configuration options available for the `oauth2Login()` DSL:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.clientRegistrationRepository(this.clientRegistrationRepository())
+				.authorizedClientService(this.authorizedClientService())
+				.loginPage("/login")
+				.authorizationEndpoint()
+					.baseUri(this.authorizationRequestBaseUri())
+					.authorizationRequestRepository(this.authorizationRequestRepository())
+					.and()
+				.redirectionEndpoint()
+					.baseUri(this.authorizationResponseBaseUri())
+					.and()
+				.tokenEndpoint()
+					.accessTokenResponseClient(this.accessTokenResponseClient())
+					.and()
+				.userInfoEndpoint()
+					.userAuthoritiesMapper(this.userAuthoritiesMapper())
+					.userService(this.oauth2UserService())
+					.oidcUserService(this.oidcUserService())
+					.customUserType(GitHubOAuth2User.class, "github");
+	}
+}
+----
+
+The sections to follow go into more detail on each of the configuration options available:
+
+* <<oauth2login-advanced-login-page>>
+* <<oauth2login-advanced-authorization-endpoint>>
+* <<oauth2login-advanced-redirection-endpoint>>
+* <<oauth2login-advanced-token-endpoint>>
+* <<oauth2login-advanced-userinfo-endpoint>>
+
+
+[[oauth2login-advanced-login-page]]
+=== OAuth 2.0 Login Page
+
+By default, the OAuth 2.0 Login Page is auto-generated by the `DefaultLoginPageGeneratingFilter`.
+The default login page shows each configured OAuth Client with its `ClientRegistration.clientName`
+as a link, which is capable of initiating the Authorization Request (or OAuth 2.0 Login).
+
+The link's destination for each OAuth Client defaults to the following:
+
+`OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI` + "/{registrationId}"
+
+The following line shows an example:
+
+[source,html]
+----
+<a href="/oauth2/authorization/google">Google</a>
+----
+
+To override the default login page,
+configure `oauth2Login().loginPage()` and (optionally) `oauth2Login().authorizationEndpoint().baseUri()`.
+
+The following listing shows an example:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.loginPage("/login/oauth2")
+				...
+				.authorizationEndpoint()
+					.baseUri("/login/oauth2/authorization")
+					....
+	}
+}
+----
+
+[IMPORTANT]
+You need to provide a `@Controller` with a `@RequestMapping("/login/oauth2")` that is capable of rendering the custom login page.
+
+[TIP]
+====
+As noted earlier, configuring `oauth2Login().authorizationEndpoint().baseUri()` is optional.
+However, if you choose to customize it, ensure the link to each OAuth Client matches the `authorizationEndpoint().baseUri()`.
+
+The following line shows an example:
+
+[source,html]
+----
+<a href="/login/oauth2/authorization/google">Google</a>
+----
+====
+
+[[oauth2login-advanced-authorization-endpoint]]
+=== Authorization Endpoint
+
+
+[[oauth2login-advanced-authorization-request-repository]]
+==== `AuthorizationRequestRepository`
+
+`AuthorizationRequestRepository` is responsible for the persistence of the `OAuth2AuthorizationRequest`
+from the time the Authorization Request is initiated to the time the Authorization Response
+is received (the callback).
+
+[TIP]
+The `OAuth2AuthorizationRequest` is used to correlate and validate the Authorization Response.
+
+The default implementation of `AuthorizationRequestRepository` is `HttpSessionOAuth2AuthorizationRequestRepository`,
+which stores the `OAuth2AuthorizationRequest` in the `HttpSession`.
+
+If you would like to provide a custom implementation of `AuthorizationRequestRepository`
+that stores the attributes of `OAuth2AuthorizationRequest` in a `Cookie`,
+configure it as shown in the following example:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.authorizationEndpoint()
+					.authorizationRequestRepository(this.cookieAuthorizationRequestRepository())
+					...
+	}
+
+	private AuthorizationRequestRepository<OAuth2AuthorizationRequest> cookieAuthorizationRequestRepository() {
+		return new HttpCookieOAuth2AuthorizationRequestRepository();
+	}
+}
+----
+
+[[oauth2login-advanced-redirection-endpoint]]
+=== Redirection Endpoint
+
+The Redirection Endpoint is used by the Authorization Server for returning the Authorization Response
+(which contains the authorization credentials) to the client via the Resource Owner user-agent.
+
+[TIP]
+OAuth 2.0 Login leverages the Authorization Code Grant. Therefore, the authorization credential is the authorization code.
+
+The default Authorization Response `baseUri` (redirection endpoint) is `*/login/oauth2/code/**`, which is defined in `OAuth2LoginAuthenticationFilter.DEFAULT_FILTER_PROCESSES_URI`.
+
+If you would like to customize the Authorization Response `baseUri`, configure it as shown in the following example:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.redirectionEndpoint()
+					.baseUri("/login/oauth2/callback/*")
+					....
+	}
+}
+----
+
+[IMPORTANT]
+====
+You also need to ensure the `ClientRegistration.redirectUriTemplate` matches the custom Authorization Response `baseUri`.
+
+The following listing shows an example:
+
+[source,java]
+----
+return CommonOAuth2Provider.GOOGLE.getBuilder("google")
+	.clientId("google-client-id")
+	.clientSecret("google-client-secret")
+	.redirectUriTemplate("{baseUrl}/login/oauth2/callback/{registrationId}")
+	.build();
+----
+====
+
+[[oauth2login-advanced-token-endpoint]]
+=== Token Endpoint
+
+
+[[oauth2login-advanced-token-client]]
+==== OAuth2AccessTokenResponseClient
+
+`OAuth2AccessTokenResponseClient` is responsible for exchanging an authorization grant credential
+for an access token credential at the Authorization Server's Token Endpoint.
+
+The default implementation of `OAuth2AccessTokenResponseClient` is `NimbusAuthorizationCodeTokenResponseClient`,
+which exchanges an authorization code for an access token at the Token Endpoint.
+
+[NOTE]
+`NimbusAuthorizationCodeTokenResponseClient` uses the https://connect2id.com/products/nimbus-oauth-openid-connect-sdk[Nimbus OAuth 2.0 SDK] internally.
+
+If you would like to provide a custom implementation of `OAuth2AccessTokenResponseClient`
+that uses Spring Framework 5 reactive `WebClient` for initiating requests to the Token Endpoint,
+configure it as shown in the following example:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.tokenEndpoint()
+					.accessTokenResponseClient(this.accessTokenResponseClient())
+					...
+	}
+
+	private OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
+		return new SpringWebClientAuthorizationCodeTokenResponseClient();
+	}
+}
+----
+
+[[oauth2login-advanced-userinfo-endpoint]]
+=== UserInfo Endpoint
+
+The UserInfo Endpoint includes a number of configuration options, as described in the following sub-sections:
+
+* <<oauth2login-advanced-map-authorities>>
+* <<oauth2login-advanced-custom-user>>
+* <<oauth2login-advanced-oauth2-user-service>>
+* <<oauth2login-advanced-oidc-user-service>>
+
+
+[[oauth2login-advanced-map-authorities]]
+==== Mapping User Authorities
+
+After the user successfully authenticates with the OAuth 2.0 Provider,
+the `OAuth2User.getAuthorities()` may be mapped to a new set of `GrantedAuthority` instances, which are then supplied to `OAuth2AuthenticationToken`.
+
+[TIP]
+`OAuth2AuthenticationToken.getAuthorities()` is used for authorizing requests, such as in `hasRole('USER')` or `hasRole('ADMIN')`.
+
+In order to map user authorities, you need to provide an implementation of `GrantedAuthoritiesMapper`
+and configure it as shown in the following example:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.userInfoEndpoint()
+					.userAuthoritiesMapper(this.userAuthoritiesMapper())
+					...
+	}
+
+	private GrantedAuthoritiesMapper userAuthoritiesMapper() {
+		return (authorities) -> {
+			Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+
+			authorities.forEach(authority -> {
+				if (OidcUserAuthority.class.isInstance(authority)) {
+					OidcUserAuthority oidcUserAuthority = (OidcUserAuthority)authority;
+
+					OidcIdToken idToken = oidcUserAuthority.getIdToken();
+					OidcUserInfo userInfo = oidcUserAuthority.getUserInfo();
+
+					// Map the claims found in idToken and/or userInfo
+					// to one or more GrantedAuthority's and add it to mappedAuthorities
+
+				} else if (OAuth2UserAuthority.class.isInstance(authority)) {
+					OAuth2UserAuthority oauth2UserAuthority = (OAuth2UserAuthority)authority;
+
+					Map<String, Object> userAttributes = oauth2UserAuthority.getAttributes();
+
+					// Map the attributes found in userAttributes
+					// to one or more GrantedAuthority's and add it to mappedAuthorities
+
+				}
+			});
+
+			return mappedAuthorities;
+		};
+	}
+}
+----
+
+[[oauth2login-advanced-custom-user]]
+==== Configuring a Custom OAuth2User
+
+`CustomUserTypesOAuth2UserService` is an implementation of an `OAuth2UserService`
+that provides support for custom `OAuth2User` types.
+
+If the default implementation (`DefaultOAuth2User`) does not suit your needs,
+you can define your own implementation of `OAuth2User`.
+
+The following code demonstrates how you would register a custom `OAuth2User` type for GitHub:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.userInfoEndpoint()
+					.customUserType(GitHubOAuth2User.class, "github")
+					...
+	}
+}
+----
+
+The following code shows an example of a custom `OAuth2User` type for GitHub:
+
+[source,java]
+----
+public class GitHubOAuth2User implements OAuth2User {
+	private List<GrantedAuthority> authorities =
+		AuthorityUtils.createAuthorityList("ROLE_USER");
+	private Map<String, Object> attributes;
+	private String id;
+	private String name;
+	private String login;
+	private String email;
+
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		return this.authorities;
+	}
+
+	@Override
+	public Map<String, Object> getAttributes() {
+		if (this.attributes == null) {
+			this.attributes = new HashMap<>();
+			this.attributes.put("id", this.getId());
+			this.attributes.put("name", this.getName());
+			this.attributes.put("login", this.getLogin());
+			this.attributes.put("email", this.getEmail());
+		}
+		return attributes;
+	}
+
+	public String getId() {
+		return this.id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	@Override
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getLogin() {
+		return this.login;
+	}
+
+	public void setLogin(String login) {
+		this.login = login;
+	}
+
+	public String getEmail() {
+		return this.email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+}
+----
+
+[TIP]
+`id`, `name`, `login`, and `email` are attributes returned in GitHub's UserInfo Response.
+For detailed information returned from the UserInfo Endpoint, see the API documentation
+for https://developer.github.com/v3/users/#get-the-authenticated-user["Get the authenticated user"].
+
+[[oauth2login-advanced-oauth2-user-service]]
+==== OAuth 2.0 UserService
+
+`DefaultOAuth2UserService` is an implementation of an `OAuth2UserService`
+that supports standard OAuth 2.0 Provider's.
+
+[NOTE]
+`OAuth2UserService` obtains the user attributes
+of the end-user (the resource owner) from the UserInfo Endpoint (by using the
+access token granted to the client during the authorization flow)
+and returns an `AuthenticatedPrincipal` in the form of an `OAuth2User`.
+
+If the default implementation does not suit your needs, you can define your own implementation of `OAuth2UserService`
+for standard OAuth 2.0 Provider's.
+
+The following configuration demonstrates how to configure a custom `OAuth2UserService`:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.userInfoEndpoint()
+					.userService(this.oauth2UserService())
+					...
+	}
+
+	private OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService() {
+		return new CustomOAuth2UserService();
+	}
+}
+----
+
+[[oauth2login-advanced-oidc-user-service]]
+==== OpenID Connect 1.0 UserService
+
+`OidcUserService` is an implementation of an `OAuth2UserService`
+that supports OpenID Connect 1.0 Provider's.
+
+[NOTE]
+`OAuth2UserService` is responsible for obtaining the user attributes
+of the end user (the resource owner) from the UserInfo Endpoint (by using the
+access token granted to the client during the authorization flow)
+and return an `AuthenticatedPrincipal` in the form of an `OidcUser`.
+
+If the default implementation does not suit your needs, you can define your own implementation of `OAuth2UserService`
+for OpenID Connect 1.0 Provider's.
+
+The following configuration demonstrates how to configure a custom OpenID Connect 1.0 `OAuth2UserService`:
+
+[source,java]
+----
+@EnableWebSecurity
+public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.oauth2Login()
+				.userInfoEndpoint()
+					.oidcUserService(this.oidcUserService())
+					...
+	}
+
+	private OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
+		return new CustomOidcUserService();
+	}
+}
+----
 
 [[taglibs]]
 == JSP Tag Libraries
@@ -6226,7 +7500,10 @@ Next you need to add a `CasAuthenticationProvider` and its collaborators:
 </bean>
 
 <security:user-service id="userService">
-<security:user name="joe" password="joe" authorities="ROLE_USER" />
+<!-- Password is prefixed with {noop} to indicate to DelegatingPasswordEncoder that
+NoOpPasswordEncoder should be used. This is not safe for production, but makes reading
+in samples easier. Normally passwords should be hashed using BCrypt -->
+<security:user name="joe" password="{noop}joe" authorities="ROLE_USER" />
 ...
 </security:user-service>
 ----
@@ -6614,7 +7891,7 @@ Use the KeyGenerators.secureRandom factory methods to generate a BytesKeyGenerat
 
 [source,java]
 ----
-KeyGenerator generator = KeyGenerators.secureRandom();
+BytesKeyGenerator generator = KeyGenerators.secureRandom();
 byte[] key = generator.generateKey();
 ----
 
@@ -6831,13 +8108,71 @@ NOTE: As of Spring Security 4.0, `@EnableWebMvcSecurity` is deprecated. The repl
 
 To enable Spring Security integration with Spring MVC add the `@EnableWebSecurity` annotation to your configuration.
 
-NOTE: Spring Security provides the configuration using Spring MVC's http://docs.spring.io/spring-framework/docs/4.1.x/spring-framework-reference/htmlsingle/#mvc-config-customize[WebMvcConfigurerAdapter]. This means that if you are using more advanced options, like integrating with `WebMvcConfigurationSupport` directly, then you will need to manually provide the Spring Security configuration.
+NOTE: Spring Security provides the configuration using Spring MVC's https://docs.spring.io/spring/docs/5.0.0.RELEASE/spring-framework-reference/web.html#mvc-config-customize[WebMvcConfigurer]. This means that if you are using more advanced options, like integrating with `WebMvcConfigurationSupport` directly, then you will need to manually provide the Spring Security configuration.
 
 [[mvc-requestmatcher]]
 === MvcRequestMatcher
 
 Spring Security provides deep integration with how Spring MVC matches on URLs with `MvcRequestMatcher`.
 This is helpful to ensure your Security rules match the logic used to handle your requests.
+
+In order to use `MvcRequestMatcher` you must place the Spring Security Configuration in the same `ApplicationContext` as your `DispatcherServlet`.
+This is necessary because Spring Security's `MvcRequestMatcher` expects a `HandlerMappingIntrospector` bean with the name of `mvcHandlerMappingIntrospector` to be registered by your Spring MVC configuration that is used to perform the matching.
+
+For a `web.xml` this means that you should place your configuration in the `DispatcherServlet.xml`.
+
+[source,xml]
+----
+<listener>
+  <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+
+<!-- All Spring Configuration (both MVC and Security) are in /WEB-INF/spring/ -->
+<context-param>
+  <param-name>contextConfigLocation</param-name>
+  <param-value>/WEB-INF/spring/*.xml</param-value>
+</context-param>
+
+<servlet>
+  <servlet-name>spring</servlet-name>
+  <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+  <!-- Load from the ContextLoaderListener -->
+  <init-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value></param-value>
+  </init-param>
+</servlet>
+
+<servlet-mapping>
+  <servlet-name>spring</servlet-name>
+  <url-pattern>/</url-pattern>
+</servlet-mapping>
+----
+
+Below `WebSecurityConfiguration` in placed in the ``DispatcherServlet``s `ApplicationContext`.
+
+[source,java]
+----
+public class SecurityInitializer extends
+    AbstractAnnotationConfigDispatcherServletInitializer {
+
+  @Override
+  protected Class<?>[] getRootConfigClasses() {
+    return null;
+  }
+
+  @Override
+  protected Class<?>[] getServletConfigClasses() {
+    return new Class[] { RootConfiguration.class,
+        WebMvcConfiguration.class };
+  }
+
+  @Override
+  protected String[] getServletMappings() {
+    return new String[] { "/" };
+  }
+}
+----
 
 [NOTE]
 ====
@@ -7276,7 +8611,7 @@ create table acl_class(
 create table acl_object_identity(
 	id bigint generated by default as identity(start with 100) not null primary key,
 	object_id_class bigint not null,
-	object_id_identity bigint not null,
+	object_id_identity varchar_ignorecase(36) not null,
 	parent_object bigint,
 	owner_sid bigint,
 	entries_inheriting boolean not null,
@@ -7320,7 +8655,7 @@ create table acl_class(
 create table acl_object_identity(
 	id bigserial primary key,
 	object_id_class bigint not null,
-	object_id_identity bigint not null,
+	object_id_identity varchar(36) not null,
 	parent_object bigint,
 	owner_sid bigint,
 	entries_inheriting boolean not null,
@@ -7369,7 +8704,7 @@ CREATE TABLE acl_class (
 CREATE TABLE acl_object_identity (
 	id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
 	object_id_class BIGINT UNSIGNED NOT NULL,
-	object_id_identity BIGINT NOT NULL,
+	object_id_identity VARCHAR(36) NOT NULL,
 	parent_object BIGINT UNSIGNED,
 	owner_sid BIGINT UNSIGNED,
 	entries_inheriting BOOLEAN NOT NULL,
@@ -7413,7 +8748,7 @@ CREATE TABLE acl_class (
 CREATE TABLE acl_object_identity (
 	id BIGINT NOT NULL IDENTITY PRIMARY KEY,
 	object_id_class BIGINT NOT NULL,
-	object_id_identity BIGINT NOT NULL,
+	object_id_identity VARCHAR(36) NOT NULL,
 	parent_object BIGINT,
 	owner_sid BIGINT,
 	entries_inheriting BIT NOT NULL,
@@ -7471,7 +8806,7 @@ END;
 CREATE TABLE acl_object_identity (
 	id NUMBER(38) NOT NULL PRIMARY KEY,
 	object_id_class NUMBER(38) NOT NULL,
-	object_id_identity NUMBER(38) NOT NULL,
+	object_id_identity NVARCHAR2(36) NOT NULL,
 	parent_object NUMBER(38),
 	owner_sid NUMBER(38),
 	entries_inheriting NUMBER(1) NOT NULL CHECK (entries_inheriting in (0, 1)),
@@ -9166,7 +10501,7 @@ select username, password, enabled from users where username = ?
 
 [[nsa-password-encoder]]
 ==== <password-encoder>
-Authentication providers can optionally be configured to use a password encoder as described in the <<ns-password-encoder,namespace introduction>>. This will result in the bean being injected with the appropriate `PasswordEncoder` instance, potentially with an accompanying `SaltSource` bean to provide salt values for hashing.
+Authentication providers can optionally be configured to use a password encoder as described in the <<ns-password-encoder,namespace introduction>>. This will result in the bean being injected with the appropriate `PasswordEncoder` instance.
 
 
 [[nsa-password-encoder-parents]]
@@ -9182,11 +10517,6 @@ Authentication providers can optionally be configured to use a password encoder 
 ===== <password-encoder> Attributes
 
 
-[[nsa-password-encoder-base64]]
-* **base64**
-Whether a string should be base64 encoded
-
-
 [[nsa-password-encoder-hash]]
 * **hash**
 Defines the hashing algorithm used on user passwords. We recommend strongly against using MD4, as it is a very weak hashing algorithm.
@@ -9195,46 +10525,6 @@ Defines the hashing algorithm used on user passwords. We recommend strongly agai
 [[nsa-password-encoder-ref]]
 * **ref**
 Defines a reference to a Spring bean that implements `PasswordEncoder`.
-
-
-[[nsa-password-encoder-children]]
-===== Child Elements of <password-encoder>
-
-
-* <<nsa-salt-source,salt-source>>
-
-
-
-[[nsa-salt-source]]
-==== <salt-source>
-Password salting strategy. A system-wide constant or a property from the UserDetails object can be used.
-
-
-[[nsa-salt-source-parents]]
-===== Parent Elements of <salt-source>
-
-
-* <<nsa-password-encoder,password-encoder>>
-
-
-
-[[nsa-salt-source-attributes]]
-===== <salt-source> Attributes
-
-
-[[nsa-salt-source-ref]]
-* **ref**
-Defines a reference to a Spring bean Id.
-
-
-[[nsa-salt-source-system-wide]]
-* **system-wide**
-A single value that will be used as the salt for a password encoder.
-
-
-[[nsa-salt-source-user-property]]
-* **user-property**
-A property of the UserDetails object which will be used as salt by a password encoder. Typically something like "username" might be used.
 
 
 [[nsa-user-service]]
@@ -9858,10 +11148,6 @@ The core module must be included in any project using Spring Security.
 |===
 | Dependency | Version | Description
 
-| aopalliance
-| 1.0
-| Required for method security implementation.
-
 | ehcache
 | 1.6.2
 | Required if the Ehcache-based user cache implementation is used (optional).
@@ -10101,5 +11387,3 @@ Provides Spring Security's JSP tag implementations.
 include::{include-dir}/proxy-server.adoc[]
 
 include::{include-dir}/faq.adoc[]
-
-include::{include-dir}/migrating.adoc[]

@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.security.config.annotation.web;
+package org.springframework.security.config.annotation.web
+
+import org.springframework.security.core.userdetails.PasswordEncodedUser;
 
 import static org.junit.Assert.*
 import static org.springframework.security.config.annotation.web.WebSecurityConfigurerAdapterTestsConfigs.*
@@ -94,7 +96,7 @@ class WebSecurityConfigurerAdapterTests extends BaseSpringSpec {
 		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 			auth
 				.inMemoryAuthentication()
-					.withUser("user").password("password").roles("USER")
+					.withUser(PasswordEncodedUser.user())
 		}
 
 		@Override
@@ -117,7 +119,7 @@ class WebSecurityConfigurerAdapterTests extends BaseSpringSpec {
 		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 			auth
 				.inMemoryAuthentication()
-					.withUser("user").password("password").roles("USER")
+					.withUser(PasswordEncodedUser.user())
 		}
 
 		@Override
@@ -153,7 +155,7 @@ class WebSecurityConfigurerAdapterTests extends BaseSpringSpec {
 		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 			auth
 				.inMemoryAuthentication()
-					.withUser("user").password("password").roles("USER")
+					.withUser("user").password("{noop}password").roles("USER")
 		}
 
 		@Override
@@ -176,7 +178,7 @@ class WebSecurityConfigurerAdapterTests extends BaseSpringSpec {
 		static ContentNegotiationStrategy CNS
 
 		@Bean
-		public ContentNegotiationStrategy cns() {
+		public static ContentNegotiationStrategy cns() {
 			return CNS
 		}
 	}
@@ -193,6 +195,7 @@ class WebSecurityConfigurerAdapterTests extends BaseSpringSpec {
 
 	def "UserDetailsService lazy"() {
 		setup:
+			allowCircularReferences = true
 			loadConfig(RequiresUserDetailsServiceConfig,UserDetailsServiceConfig)
 		when:
 			findFilter(MyFilter).userDetailsService.loadUserByUsername("user")
@@ -233,7 +236,7 @@ class WebSecurityConfigurerAdapterTests extends BaseSpringSpec {
 		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 			auth
 				.inMemoryAuthentication()
-					.withUser("user").password("password").roles("USER")
+					.withUser(PasswordEncodedUser.user())
 		}
 	}
 
@@ -274,7 +277,7 @@ class WebSecurityConfigurerAdapterTests extends BaseSpringSpec {
 		static AuthenticationTrustResolver TR
 
 		@Bean
-		public AuthenticationTrustResolver tr() {
+		public static AuthenticationTrustResolver tr() {
 			return TR
 		}
 	}

@@ -20,12 +20,12 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.encoding.PasswordEncoder;
-import org.springframework.security.authentication.encoding.PlaintextPasswordEncoder;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.Assert;
 
 /**
@@ -41,7 +41,7 @@ public class DaoAuthenticationProvider extends AbstractUserDetailsAuthentication
 
 	/**
 	 * The plaintext password used to perform
-	 * {@link PasswordEncoder#isPasswordValid(String, String, Object)} on when the user is
+	 * PasswordEncoder#matches(CharSequence, String)}  on when the user is
 	 * not found to avoid SEC-2056.
 	 */
 	private static final String USER_NOT_FOUND_PASSWORD = "userNotFoundPassword";
@@ -53,19 +53,17 @@ public class DaoAuthenticationProvider extends AbstractUserDetailsAuthentication
 
 	/**
 	 * The password used to perform
-	 * {@link PasswordEncoder#isPasswordValid(String, String, Object)} on when the user is
+	 * {@link PasswordEncoder#matches(CharSequence, String)} on when the user is
 	 * not found to avoid SEC-2056. This is necessary, because some
 	 * {@link PasswordEncoder} implementations will short circuit if the password is not
 	 * in a valid format.
 	 */
 	private String userNotFoundEncodedPassword;
 
-	private SaltSource saltSource;
-
 	private UserDetailsService userDetailsService;
 
 	public DaoAuthenticationProvider() {
-		setPasswordEncoder(new PlaintextPasswordEncoder());
+		setPasswordEncoder(PasswordEncoderFactories.createDelegatingPasswordEncoder());
 	}
 
 	// ~ Methods
@@ -75,12 +73,6 @@ public class DaoAuthenticationProvider extends AbstractUserDetailsAuthentication
 	protected void additionalAuthenticationChecks(UserDetails userDetails,
 			UsernamePasswordAuthenticationToken authentication)
 			throws AuthenticationException {
-		Object salt = null;
-
-		if (this.saltSource != null) {
-			salt = this.saltSource.getSalt(userDetails);
-		}
-
 		if (authentication.getCredentials() == null) {
 			logger.debug("Authentication failed: no credentials provided");
 
@@ -91,8 +83,7 @@ public class DaoAuthenticationProvider extends AbstractUserDetailsAuthentication
 
 		String presentedPassword = authentication.getCredentials().toString();
 
-		if (!passwordEncoder.isPasswordValid(userDetails.getPassword(),
-				presentedPassword, salt)) {
+		if (!passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
 			logger.debug("Authentication failed: password does not match stored value");
 
 			throw new BadCredentialsException(messages.getMessage(
@@ -103,6 +94,7 @@ public class DaoAuthenticationProvider extends AbstractUserDetailsAuthentication
 
 	protected void doAfterPropertiesSet() throws Exception {
 		Assert.notNull(this.userDetailsService, "A UserDetailsService must be set");
+		this.userNotFoundEncodedPassword = this.passwordEncoder.encode(USER_NOT_FOUND_PASSWORD);
 	}
 
 	protected final UserDetails retrieveUser(String username,
@@ -116,8 +108,7 @@ public class DaoAuthenticationProvider extends AbstractUserDetailsAuthentication
 		catch (UsernameNotFoundException notFound) {
 			if (authentication.getCredentials() != null) {
 				String presentedPassword = authentication.getCredentials().toString();
-				passwordEncoder.isPasswordValid(userNotFoundEncodedPassword,
-						presentedPassword, null);
+				passwordEncoder.matches(presentedPassword, userNotFoundEncodedPassword);
 			}
 			throw notFound;
 		}
@@ -146,70 +137,13 @@ public class DaoAuthenticationProvider extends AbstractUserDetailsAuthentication
 	 * @param passwordEncoder must be an instance of one of the {@code PasswordEncoder}
 	 * types.
 	 */
-	public void setPasswordEncoder(Object passwordEncoder) {
+	public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
 		Assert.notNull(passwordEncoder, "passwordEncoder cannot be null");
-
-		if (passwordEncoder instanceof PasswordEncoder) {
-			setPasswordEncoder((PasswordEncoder) passwordEncoder);
-			return;
-		}
-
-		if (passwordEncoder instanceof org.springframework.security.crypto.password.PasswordEncoder) {
-			final org.springframework.security.crypto.password.PasswordEncoder delegate = (org.springframework.security.crypto.password.PasswordEncoder) passwordEncoder;
-			setPasswordEncoder(new PasswordEncoder() {
-				public String encodePassword(String rawPass, Object salt) {
-					checkSalt(salt);
-					return delegate.encode(rawPass);
-				}
-
-				public boolean isPasswordValid(String encPass, String rawPass, Object salt) {
-					checkSalt(salt);
-					return delegate.matches(rawPass, encPass);
-				}
-
-				private void checkSalt(Object salt) {
-					Assert.isNull(salt,
-							"Salt value must be null when used with crypto module PasswordEncoder");
-				}
-			});
-
-			return;
-		}
-
-		throw new IllegalArgumentException(
-				"passwordEncoder must be a PasswordEncoder instance");
-	}
-
-	private void setPasswordEncoder(PasswordEncoder passwordEncoder) {
-		Assert.notNull(passwordEncoder, "passwordEncoder cannot be null");
-
-		this.userNotFoundEncodedPassword = passwordEncoder.encodePassword(
-				USER_NOT_FOUND_PASSWORD, null);
 		this.passwordEncoder = passwordEncoder;
 	}
 
 	protected PasswordEncoder getPasswordEncoder() {
 		return passwordEncoder;
-	}
-
-	/**
-	 * The source of salts to use when decoding passwords. <code>null</code> is a valid
-	 * value, meaning the <code>DaoAuthenticationProvider</code> will present
-	 * <code>null</code> to the relevant <code>PasswordEncoder</code>.
-	 * <p>
-	 * Instead, it is recommended that you use an encoder which uses a random salt and
-	 * combines it with the password field. This is the default approach taken in the
-	 * {@code org.springframework.security.crypto.password} package.
-	 *
-	 * @param saltSource to use when attempting to decode passwords via the
-	 * <code>PasswordEncoder</code>
-	 */
-	public void setSaltSource(SaltSource saltSource) {
-		this.saltSource = saltSource;
-	}
-
-	protected SaltSource getSaltSource() {
-		return saltSource;
 	}
 
 	public void setUserDetailsService(UserDetailsService userDetailsService) {

@@ -119,7 +119,7 @@ public final class HttpSecurity extends
 		implements SecurityBuilder<DefaultSecurityFilterChain>,
 		HttpSecurityBuilder<HttpSecurity> {
 	private final RequestMatcherConfigurer requestMatcherConfigurer;
-	private List<Filter> filters = new ArrayList<Filter>();
+	private List<Filter> filters = new ArrayList<>();
 	private RequestMatcher requestMatcher = AnyRequestMatcher.INSTANCE;
 	private FilterComparator comparator = new FilterComparator();
 
@@ -232,7 +232,7 @@ public final class HttpSecurity extends
 	 * @see OpenIDLoginConfigurer
 	 */
 	public OpenIDLoginConfigurer<HttpSecurity> openidLogin() throws Exception {
-		return getOrApply(new OpenIDLoginConfigurer<HttpSecurity>());
+		return getOrApply(new OpenIDLoginConfigurer<>());
 	}
 
 	/**
@@ -332,7 +332,7 @@ public final class HttpSecurity extends
 	 * @see HeadersConfigurer
 	 */
 	public HeadersConfigurer<HttpSecurity> headers() throws Exception {
-		return getOrApply(new HeadersConfigurer<HttpSecurity>());
+		return getOrApply(new HeadersConfigurer<>());
 	}
 
 	/**
@@ -345,7 +345,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public CorsConfigurer<HttpSecurity> cors() throws Exception {
-		return getOrApply(new CorsConfigurer<HttpSecurity>());
+		return getOrApply(new CorsConfigurer<>());
 	}
 
 	/**
@@ -397,7 +397,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public SessionManagementConfigurer<HttpSecurity> sessionManagement() throws Exception {
-		return getOrApply(new SessionManagementConfigurer<HttpSecurity>());
+		return getOrApply(new SessionManagementConfigurer<>());
 	}
 
 	/**
@@ -440,7 +440,7 @@ public final class HttpSecurity extends
 	 * @see #requiresChannel()
 	 */
 	public PortMapperConfigurer<HttpSecurity> portMapper() throws Exception {
-		return getOrApply(new PortMapperConfigurer<HttpSecurity>());
+		return getOrApply(new PortMapperConfigurer<>());
 	}
 
 	/**
@@ -512,7 +512,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public JeeConfigurer<HttpSecurity> jee() throws Exception {
-		return getOrApply(new JeeConfigurer<HttpSecurity>());
+		return getOrApply(new JeeConfigurer<>());
 	}
 
 	/**
@@ -542,7 +542,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public X509Configurer<HttpSecurity> x509() throws Exception {
-		return getOrApply(new X509Configurer<HttpSecurity>());
+		return getOrApply(new X509Configurer<>());
 	}
 
 	/**
@@ -579,7 +579,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public RememberMeConfigurer<HttpSecurity> rememberMe() throws Exception {
-		return getOrApply(new RememberMeConfigurer<HttpSecurity>());
+		return getOrApply(new RememberMeConfigurer<>());
 	}
 
 	/**
@@ -604,7 +604,7 @@ public final class HttpSecurity extends
 	 * 	&#064;Override
 	 * 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 	 * 		auth.inMemoryAuthentication().withUser(&quot;user&quot;).password(&quot;password&quot;).roles(&quot;USER&quot;)
-	 * 				.and().withUser(&quot;adminr&quot;).password(&quot;password&quot;).roles(&quot;ADMIN&quot;, &quot;USER&quot;);
+	 * 				.and().withUser(&quot;admin&quot;).password(&quot;password&quot;).roles(&quot;ADMIN&quot;, &quot;USER&quot;);
 	 * 	}
 	 * }
 	 * </pre>
@@ -627,7 +627,7 @@ public final class HttpSecurity extends
 	 * 	&#064;Override
 	 * 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 	 * 		auth.inMemoryAuthentication().withUser(&quot;user&quot;).password(&quot;password&quot;).roles(&quot;USER&quot;)
-	 * 				.and().withUser(&quot;adminr&quot;).password(&quot;password&quot;).roles(&quot;ADMIN&quot;, &quot;USER&quot;);
+	 * 				.and().withUser(&quot;admin&quot;).password(&quot;password&quot;).roles(&quot;ADMIN&quot;, &quot;USER&quot;);
 	 * 	}
 	 * }
 	 * </pre>
@@ -649,7 +649,7 @@ public final class HttpSecurity extends
 	public ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry authorizeRequests()
 			throws Exception {
 		ApplicationContext context = getContext();
-		return getOrApply(new ExpressionUrlAuthorizationConfigurer<HttpSecurity>(context))
+		return getOrApply(new ExpressionUrlAuthorizationConfigurer<>(context))
 				.getRegistry();
 	}
 
@@ -664,7 +664,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public RequestCacheConfigurer<HttpSecurity> requestCache() throws Exception {
-		return getOrApply(new RequestCacheConfigurer<HttpSecurity>());
+		return getOrApply(new RequestCacheConfigurer<>());
 	}
 
 	/**
@@ -675,7 +675,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public ExceptionHandlingConfigurer<HttpSecurity> exceptionHandling() throws Exception {
-		return getOrApply(new ExceptionHandlingConfigurer<HttpSecurity>());
+		return getOrApply(new ExceptionHandlingConfigurer<>());
 	}
 
 	/**
@@ -687,7 +687,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public SecurityContextConfigurer<HttpSecurity> securityContext() throws Exception {
-		return getOrApply(new SecurityContextConfigurer<HttpSecurity>());
+		return getOrApply(new SecurityContextConfigurer<>());
 	}
 
 	/**
@@ -699,7 +699,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public ServletApiConfigurer<HttpSecurity> servletApi() throws Exception {
-		return getOrApply(new ServletApiConfigurer<HttpSecurity>());
+		return getOrApply(new ServletApiConfigurer<>());
 	}
 
 	/**
@@ -726,7 +726,7 @@ public final class HttpSecurity extends
 	 */
 	public CsrfConfigurer<HttpSecurity> csrf() throws Exception {
 		ApplicationContext context = getContext();
-		return getOrApply(new CsrfConfigurer<HttpSecurity>(context));
+		return getOrApply(new CsrfConfigurer<>(context));
 	}
 
 	/**
@@ -767,7 +767,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public LogoutConfigurer<HttpSecurity> logout() throws Exception {
-		return getOrApply(new LogoutConfigurer<HttpSecurity>());
+		return getOrApply(new LogoutConfigurer<>());
 	}
 
 	/**
@@ -830,7 +830,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public AnonymousConfigurer<HttpSecurity> anonymous() throws Exception {
-		return getOrApply(new AnonymousConfigurer<HttpSecurity>());
+		return getOrApply(new AnonymousConfigurer<>());
 	}
 
 	/**
@@ -894,159 +894,101 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public FormLoginConfigurer<HttpSecurity> formLogin() throws Exception {
-		return getOrApply(new FormLoginConfigurer<HttpSecurity>());
+		return getOrApply(new FormLoginConfigurer<>());
 	}
 
 	/**
-	 * Configures authentication against an external <i>OAuth 2.0</i> or <i>OpenID Connect 1.0</i> Provider.
+	 * Configures authentication support using an OAuth 2.0 and/or OpenID Connect 1.0 Provider.
 	 * <br>
 	 * <br>
 	 *
-	 * The <i>&quot;authentication flow&quot;</i> is realized using the <b>Authorization Code Grant</b>,
-	 * as specified in the <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-4.1">OAuth 2.0 Authorization Framework</a>.
+	 * The &quot;authentication flow&quot; is implemented using the <b>Authorization Code Grant</b>, as specified in the
+	 * <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-4.1">OAuth 2.0 Authorization Framework</a>
+	 * and <a target="_blank" href="http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth">OpenID Connect Core 1.0</a>
+	 * specification.
 	 * <br>
 	 * <br>
 	 *
-	 * As a prerequisite to using this feature, the developer must register a <i>Client</i> with an <i>Authorization Server</i>.
-	 * The output of the <i>Client Registration</i> process results in a number of properties that are then used for configuring
-	 * an instance of a {@link org.springframework.security.oauth2.client.registration.ClientRegistration}.
-	 * Properties specific to a <i>Client</i> include: <i>client_id</i>, <i>client_secret</i>, <i>scope</i>, <i>redirect_uri</i>, etc.
-	 * There are also properties specific to the <i>Provider</i>, for example,
-	 * <i>Authorization Endpoint URI</i>, <i>Token Endpoint URI</i>, <i>UserInfo Endpoint URI</i>, etc.
-	 * <br>
-	 * <br>
-	 *
-	 * Multiple client support is provided for use cases where the application provides the user the option
-	 * for <i>&quot;Logging in&quot;</i> against one or more Providers, for example, <i>Google</i>, <i>GitHub</i>, <i>Facebook</i>, etc.
+	 * As a prerequisite to using this feature, you must register a client with a provider.
+	 * The client registration information may than be used for configuring
+	 * a {@link org.springframework.security.oauth2.client.registration.ClientRegistration} using a
+	 * {@link org.springframework.security.oauth2.client.registration.ClientRegistration.Builder}.
 	 * <br>
 	 * <br>
 	 *
 	 * {@link org.springframework.security.oauth2.client.registration.ClientRegistration}(s) are composed within a
-	 * {@link org.springframework.security.oauth2.client.registration.ClientRegistrationRepository}.
-	 * An instance of {@link org.springframework.security.oauth2.client.registration.ClientRegistrationRepository} is <b>required</b>
-	 * and may be supplied via the {@link ApplicationContext} or configured using
-	 * {@link OAuth2LoginConfigurer#clients(org.springframework.security.oauth2.client.registration.ClientRegistrationRepository)}.
+	 * {@link org.springframework.security.oauth2.client.registration.ClientRegistrationRepository},
+	 * which is <b>required</b> and must be registered with the {@link ApplicationContext} or
+	 * configured via <code>oauth2Login().clientRegistrationRepository(..)</code>.
 	 * <br>
 	 * <br>
 	 *
 	 * The default configuration provides an auto-generated login page at <code>&quot;/login&quot;</code> and
 	 * redirects to <code>&quot;/login?error&quot;</code> when an authentication error occurs.
-	 * The login page will display each of the clients (composed within the
-	 * {@link org.springframework.security.oauth2.client.registration.ClientRegistrationRepository})
-	 * with an anchor link to <code>&quot;/oauth2/authorization/code/{clientAlias}&quot;</code>.
-	 * Clicking through the link will initiate the <i>&quot;Authorization Request&quot;</i> flow
-	 * redirecting the end-user's user-agent to the <i>Authorization Endpoint</i> of the <i>Provider</i>.
-	 * Assuming the <i>Resource Owner</i> (end-user) grants the <i>Client</i> access, the <i>Authorization Server</i>
-	 * will redirect the end-user's user-agent to the <i>Redirection Endpoint</i> containing the <i>Authorization Code</i>
-	 * - the <i>Redirection Endpoint</i> is automatically configured for the application and
-	 * defaults to <code>&quot;/oauth2/authorize/code/{clientAlias}&quot;</code>.
+	 * The login page will display each of the clients with a link
+	 * that is capable of initiating the &quot;authentication flow&quot;.
+	 * <br>
+	 * <br>
 	 *
 	 * <p>
-	 * At this point in the <i>&quot;authentication flow&quot;</i>, the configured
-	 * {@link org.springframework.security.oauth2.client.authentication.AuthorizationGrantTokenExchanger}
-	 * will exchange the <i>Authorization Code</i> for an <i>Access Token</i> and then use it to access the protected resource
-	 * at the <i>UserInfo Endpoint</i> (via {@link org.springframework.security.oauth2.client.user.OAuth2UserService})
-	 * in order to retrieve the details of the <i>Resource Owner</i> (end-user) and establish the <i>&quot;authenticated&quot;</i> session.
+	 * <h2>Example Configuration</h2>
 	 *
-	 * <h2>Example Configurations</h2>
-	 *
-	 * The minimal configuration defaults to automatically generating a login page at <code>&quot;/login&quot;</code>
-	 * and redirecting to <code>&quot;/login?error&quot;</code> when an authentication error occurs or redirecting to
-	 * <code>&quot;/&quot;</code> when an authenticated session is established.
+	 * The following example shows the minimal configuration required, using Google as the Authentication Provider.
 	 *
 	 * <pre>
-	 * &#064;EnableWebSecurity
-	 * public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+	 * &#064;Configuration
+	 * public class OAuth2LoginConfig {
 	 *
-	 * 	&#064;Override
-	 * 	protected void configure(HttpSecurity http) throws Exception {
-	 *		http
-	 * 			.authorizeRequests()
-	 * 				.anyRequest().authenticated()
-	 * 				.and()
-	 * 			.oauth2Login();
-	 * 	}
+	 * 	&#064;EnableWebSecurity
+	 * 	public static class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
+	 * 		&#064;Override
+	 * 		protected void configure(HttpSecurity http) throws Exception {
+	 * 			http
+	 * 				.authorizeRequests()
+	 * 					.anyRequest().authenticated()
+	 * 					.and()
+	 * 				  .oauth2Login();
+	 *		}
+	 *	}
 	 *
 	 *	&#064;Bean
 	 *	public ClientRegistrationRepository clientRegistrationRepository() {
-	 *		// ClientRegistrationRepositoryImpl must be composed of at least one ClientRegistration instance
-	 *		return new ClientRegistrationRepositoryImpl();
+	 *		return new InMemoryClientRegistrationRepository(this.googleClientRegistration());
+	 *	}
+	 *
+	 * 	private ClientRegistration googleClientRegistration() {
+	 * 		return ClientRegistration.withRegistrationId("google")
+	 * 			.clientId("google-client-id")
+	 * 			.clientSecret("google-client-secret")
+	 * 			.clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
+	 * 			.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+	 * 			.redirectUriTemplate("{baseUrl}/login/oauth2/code/{registrationId}")
+	 * 			.scope("openid", "profile", "email", "address", "phone")
+	 * 			.authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
+	 * 			.tokenUri("https://www.googleapis.com/oauth2/v4/token")
+	 * 			.userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
+	 * 			.userNameAttributeName(IdTokenClaimNames.SUB)
+	 * 			.jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
+	 * 			.clientName("Google")
+	 * 			.build();
 	 *	}
 	 * }
 	 * </pre>
 	 *
-	 * The following shows the configuration options available for customizing the defaults.
-	 *
-	 * <pre>
-	 * &#064;EnableWebSecurity
-	 * public class OAuth2LoginSecurityConfig extends WebSecurityConfigurerAdapter {
-	 *
-	 * 	&#064;Override
-	 * 	protected void configure(HttpSecurity http) throws Exception {
-	 *		http
-	 * 			.authorizeRequests()
-	 * 				.anyRequest().authenticated()
-	 * 				.and()
-	 * 			.oauth2Login()
-	 * 				.clients(this.clientRegistrationRepository())
-	 * 				.authorizationRequestBuilder(this.authorizationRequestBuilder())
-	 * 				.authorizationCodeTokenExchanger(this.authorizationCodeTokenExchanger())
-	 * 				.userInfoEndpoint()
-	 * 					.userInfoService(this.userInfoService())
-	 * 				.userInfoEndpoint()
-	 * 					// Provide a mapping between a Converter implementation and a UserInfo Endpoint URI
-	 * 					.userInfoTypeConverter(this.userInfoConverter(),
-	 * 									new URI("https://www.googleapis.com/oauth2/v3/userinfo"));
-	 * 	}
-	 *
-	 *	&#064;Bean
-	 *	public ClientRegistrationRepository clientRegistrationRepository() {
-	 *		// ClientRegistrationRepositoryImpl must be composed of at least one ClientRegistration instance
-	 *		return new ClientRegistrationRepositoryImpl();
-	 *	}
-	 *
-	 * 	&#064;Bean
-	 * 	public AuthorizationRequestUriBuilder authorizationRequestBuilder() {
-	 * 		// Custom URI builder for the &quot;Authorization Request&quot;
-	 * 		return new AuthorizationRequestUriBuilderImpl();
-	 * 	}
-	 *
-	 * 	&#064;Bean
-	 * 	public AuthorizationGrantTokenExchanger&lt;AuthorizationCodeAuthenticationToken&gt; authorizationCodeTokenExchanger() {
-	 * 		// Custom implementation that exchanges an &quot;Authorization Code Grant&quot; for an &quot;Access Token&quot;
-	 * 		return new AuthorizationCodeTokenExchangerImpl();
-	 * 	}
-	 *
-	 * 	&#064;Bean
-	 * 	public OAuth2UserService userInfoService() {
-	 * 		// Custom implementation that retrieves the details of the authenticated user at the &quot;UserInfo Endpoint&quot;
-	 * 		return new OAuth2UserServiceImpl();
-	 * 	}
-	 *
-	 * 	&#064;Bean
-	 * 	public Converter&lt;ClientHttpResponse, UserInfo&gt; userInfoConverter() {
-	 * 		// Default converter implementation for UserInfo
-	 * 		return new org.springframework.security.oauth2.client.user.converter.UserInfoConverter();
-	 * 	}
-	 * }
-	 * </pre>
+	 * <p>
+	 * For more advanced configuration, see {@link OAuth2LoginConfigurer} for available options to customize the defaults.
 	 *
 	 * @author Joe Grandja
 	 * @since 5.0
-	 * @see <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-4.1">Section 4.1 Authorization Code Grant Flow</a>
-	 * @see <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-4.1.1">Section 4.1.1 Authorization Request</a>
-	 * @see <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-4.1.2">Section 4.1.2 Authorization Response</a>
+	 * @see <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-4.1">Section 4.1 Authorization Code Grant</a>
+	 * @see <a target="_blank" href="http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth">Section 3.1 Authorization Code Flow</a>
 	 * @see org.springframework.security.oauth2.client.registration.ClientRegistration
 	 * @see org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
-	 * @see org.springframework.security.oauth2.client.authentication.AuthorizationRequestUriBuilder
-	 * @see org.springframework.security.oauth2.client.authentication.AuthorizationGrantTokenExchanger
-	 * @see org.springframework.security.oauth2.client.user.OAuth2UserService
-	 *
 	 * @return the {@link OAuth2LoginConfigurer} for further customizations
 	 * @throws Exception
 	 */
 	public OAuth2LoginConfigurer<HttpSecurity> oauth2Login() throws Exception {
-		return getOrApply(new OAuth2LoginConfigurer<HttpSecurity>());
+		return getOrApply(new OAuth2LoginConfigurer<>());
 	}
 
 	/**
@@ -1086,7 +1028,7 @@ public final class HttpSecurity extends
 	public ChannelSecurityConfigurer<HttpSecurity>.ChannelRequestMatcherRegistry requiresChannel()
 			throws Exception {
 		ApplicationContext context = getContext();
-		return getOrApply(new ChannelSecurityConfigurer<HttpSecurity>(context))
+		return getOrApply(new ChannelSecurityConfigurer<>(context))
 				.getRegistry();
 	}
 
@@ -1096,7 +1038,7 @@ public final class HttpSecurity extends
 	 * <h2>Example Configuration</h2>
 	 *
 	 * The example below demonstrates how to configure HTTP Basic authentication for an
-	 * application. The default realm is "Spring Security Application", but can be
+	 * application. The default realm is "Realm", but can be
 	 * customized using {@link HttpBasicConfigurer#realmName(String)}.
 	 *
 	 * <pre>
@@ -1120,7 +1062,7 @@ public final class HttpSecurity extends
 	 * @throws Exception
 	 */
 	public HttpBasicConfigurer<HttpSecurity> httpBasic() throws Exception {
-		return getOrApply(new HttpBasicConfigurer<HttpSecurity>());
+		return getOrApply(new HttpBasicConfigurer<>());
 	}
 
 	public <C> void setSharedObject(Class<C> sharedType, C object) {
@@ -1142,7 +1084,7 @@ public final class HttpSecurity extends
 	 * (non-Javadoc)
 	 *
 	 * @see
-	 * org.springframework.security.config.annotation.web.HttpBuilder#authenticationProvider
+	 * org.springframework.security.config.annotation.web.HttpSecurityBuilder#authenticationProvider
 	 * (org.springframework.security.authentication.AuthenticationProvider)
 	 */
 	public HttpSecurity authenticationProvider(
@@ -1155,7 +1097,7 @@ public final class HttpSecurity extends
 	 * (non-Javadoc)
 	 *
 	 * @see
-	 * org.springframework.security.config.annotation.web.HttpBuilder#userDetailsService
+	 * org.springframework.security.config.annotation.web.HttpSecurityBuilder#userDetailsService
 	 * (org.springframework.security.core.userdetails.UserDetailsService)
 	 */
 	public HttpSecurity userDetailsService(UserDetailsService userDetailsService)
@@ -1172,7 +1114,7 @@ public final class HttpSecurity extends
 	 * (non-Javadoc)
 	 *
 	 * @see
-	 * org.springframework.security.config.annotation.web.HttpBuilder#addFilterAfter(javax
+	 * org.springframework.security.config.annotation.web.HttpSecurityBuilder#addFilterAfter(javax
 	 * .servlet.Filter, java.lang.Class)
 	 */
 	public HttpSecurity addFilterAfter(Filter filter, Class<? extends Filter> afterFilter) {
@@ -1184,7 +1126,7 @@ public final class HttpSecurity extends
 	 * (non-Javadoc)
 	 *
 	 * @see
-	 * org.springframework.security.config.annotation.web.HttpBuilder#addFilterBefore(
+	 * org.springframework.security.config.annotation.web.HttpSecurityBuilder#addFilterBefore(
 	 * javax.servlet.Filter, java.lang.Class)
 	 */
 	public HttpSecurity addFilterBefore(Filter filter,
@@ -1197,7 +1139,7 @@ public final class HttpSecurity extends
 	 * (non-Javadoc)
 	 *
 	 * @see
-	 * org.springframework.security.config.annotation.web.HttpBuilder#addFilter(javax.
+	 * org.springframework.security.config.annotation.web.HttpSecurityBuilder#addFilter(javax.
 	 * servlet.Filter)
 	 */
 	public HttpSecurity addFilter(Filter filter) {
@@ -1440,7 +1382,7 @@ public final class HttpSecurity extends
 		private MvcMatchersRequestMatcherConfigurer(ApplicationContext context,
 				List<MvcRequestMatcher> matchers) {
 			super(context);
-			this.matchers = new ArrayList<RequestMatcher>(matchers);
+			this.matchers = new ArrayList<>(matchers);
 		}
 
 		public RequestMatcherConfigurer servletPath(String servletPath) {
@@ -1461,7 +1403,7 @@ public final class HttpSecurity extends
 	public class RequestMatcherConfigurer
 			extends AbstractRequestMatcherRegistry<RequestMatcherConfigurer> {
 
-		protected List<RequestMatcher> matchers = new ArrayList<RequestMatcher>();
+		protected List<RequestMatcher> matchers = new ArrayList<>();
 
 		/**
 		 * @param context

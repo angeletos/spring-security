@@ -57,7 +57,7 @@ import org.springframework.web.filter.CorsFilter;
 @SuppressWarnings("serial")
 final class FilterComparator implements Comparator<Filter>, Serializable {
 	private static final int STEP = 100;
-	private Map<String, Integer> filterToOrder = new HashMap<String, Integer>();
+	private Map<String, Integer> filterToOrder = new HashMap<>();
 
 	FilterComparator() {
 		int order = 100;
@@ -78,7 +78,7 @@ final class FilterComparator implements Comparator<Filter>, Serializable {
 		put(LogoutFilter.class, order);
 		order += STEP;
 		filterToOrder.put(
-			"org.springframework.security.oauth2.client.authentication.AuthorizationCodeRequestRedirectFilter",
+			"org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter",
 			order);
 		order += STEP;
 		put(X509AuthenticationFilter.class, order);
@@ -89,7 +89,7 @@ final class FilterComparator implements Comparator<Filter>, Serializable {
 				order);
 		order += STEP;
 		filterToOrder.put(
-			"org.springframework.security.oauth2.client.authentication.AuthorizationCodeAuthenticationProcessingFilter",
+			"org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter",
 			order);
 		order += STEP;
 		put(UsernamePasswordAuthenticationFilter.class, order);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,17 @@ package org.springframework.security.oauth2.core.user;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
-import java.time.Instant;
-import java.util.*;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -39,24 +46,20 @@ import java.util.stream.Collectors;
  * @since 5.0
  * @see OAuth2User
  */
-public class DefaultOAuth2User implements OAuth2User {
+public class DefaultOAuth2User implements OAuth2User, Serializable {
 	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 	private final Set<GrantedAuthority> authorities;
 	private final Map<String, Object> attributes;
 	private final String nameAttributeKey;
 
-	public DefaultOAuth2User(Map<String, Object> attributes, String nameAttributeKey) {
-		this(Collections.emptySet(), attributes, nameAttributeKey);
-	}
-
 	public DefaultOAuth2User(Set<GrantedAuthority> authorities, Map<String, Object> attributes, String nameAttributeKey) {
-		Assert.notNull(authorities, "authorities cannot be null");
+		Assert.notEmpty(authorities, "authorities cannot be empty");
 		Assert.notEmpty(attributes, "attributes cannot be empty");
 		Assert.hasText(nameAttributeKey, "nameAttributeKey cannot be empty");
 		if (!attributes.containsKey(nameAttributeKey)) {
-			throw new IllegalArgumentException("Invalid nameAttributeKey: " + nameAttributeKey);
+			throw new IllegalArgumentException("Missing attribute '" + nameAttributeKey + "' in attributes");
 		}
-		this.authorities = Collections.unmodifiableSet(this.sortAuthorities(authorities));
+		this.authorities = Collections.unmodifiableSet(new LinkedHashSet<>(this.sortAuthorities(authorities)));
 		this.attributes = Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
 		this.nameAttributeKey = nameAttributeKey;
 	}
@@ -76,37 +79,10 @@ public class DefaultOAuth2User implements OAuth2User {
 		return this.attributes;
 	}
 
-	protected String getAttributeAsString(String key) {
-		Object value = this.getAttributes().get(key);
-		return (value != null ? value.toString() : null);
-	}
-
-	protected Boolean getAttributeAsBoolean(String key) {
-		String value = this.getAttributeAsString(key);
-		return (value != null ? Boolean.valueOf(value) : null);
-	}
-
-	protected Instant getAttributeAsInstant(String key) {
-		String value = this.getAttributeAsString(key);
-		if (value == null) {
-			return null;
-		}
-		try {
-			return Instant.ofEpochSecond(Long.valueOf(value));
-		} catch (NumberFormatException ex) {
-			throw new IllegalArgumentException("Invalid long value: " + ex.getMessage(), ex);
-		}
-	}
-
 	private Set<GrantedAuthority> sortAuthorities(Set<GrantedAuthority> authorities) {
-		if (CollectionUtils.isEmpty(authorities)) {
-			return Collections.emptySet();
-		}
-
 		SortedSet<GrantedAuthority> sortedAuthorities =
-			new TreeSet<>((g1, g2) -> g1.getAuthority().compareTo(g2.getAuthority()));
-		authorities.stream().forEach(sortedAuthorities::add);
-
+			new TreeSet<>(Comparator.comparing(GrantedAuthority::getAuthority));
+		sortedAuthorities.addAll(authorities);
 		return sortedAuthorities;
 	}
 

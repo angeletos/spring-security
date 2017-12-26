@@ -35,7 +35,7 @@ public class RoleHierarchyImplTests {
 	@Test
 	public void testRoleHierarchyWithNullOrEmptyAuthorities() {
 		List<GrantedAuthority> authorities0 = null;
-		List<GrantedAuthority> authorities1 = new ArrayList<GrantedAuthority>();
+		List<GrantedAuthority> authorities1 = new ArrayList<>();
 
 		RoleHierarchyImpl roleHierarchyImpl = new RoleHierarchyImpl();
 		roleHierarchyImpl.setHierarchy("ROLE_A > ROLE_B");
@@ -44,12 +44,11 @@ public class RoleHierarchyImplTests {
 				authorities0)).isNotNull();
 		assertThat(
 				roleHierarchyImpl.getReachableGrantedAuthorities(authorities0)).isEmpty();
-		;
+
 		assertThat(roleHierarchyImpl.getReachableGrantedAuthorities(
 				authorities1)).isNotNull();
 		assertThat(
 				roleHierarchyImpl.getReachableGrantedAuthorities(authorities1)).isEmpty();
-		;
 	}
 
 	@Test

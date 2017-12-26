@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import org.springframework.security.core.AuthenticatedPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
@@ -47,9 +46,10 @@ import java.util.Map;
  * @see DefaultOAuth2User
  * @see AuthenticatedPrincipal
  */
-public interface OAuth2User extends AuthenticatedPrincipal, Serializable {
+public interface OAuth2User extends AuthenticatedPrincipal {
 
 	Collection<? extends GrantedAuthority> getAuthorities();
 
 	Map<String, Object> getAttributes();
+
 }
